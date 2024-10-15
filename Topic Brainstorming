@@ -10,8 +10,12 @@ URL for US bird datasets = https://catalog.data.gov/dataset/?tags=birds
 *Idea 1: Statistically finding the best wordle start word 
 *Idea 2: Seeing if there's a correlation to the introduction of invasive starlings and population of native wood peckers (I love birds)
 *Idea 3: Volcanoes (this is a very vague idea... I just like volcanoes. I also feel like it'd be easy to find a dataset with binary variables)
+dataset about general volcano statistics and hazards = https://energydata.info/dataset/global-volcanic-ash-hazard
 *Idea 4: Looking at the population of a specific insect and see if there's correlations with native/invasive plants
 Idea 5: Something with maternal pregnancy... maybe comparing the maternal/infantal death rate in countries with strict abortion laws, countries that have higher trends of religion, countries with different types of health systems?
+Idea 6: Tracking the irrigation in different counties and the depletion of the ogallala aquifer and look for correlation
+dataset about irrigation decisions = https://www.hydroshare.org/resource/adc939312fc244e08797fd5110a88334/
+dataset about aquifer elevation = https://www.hydroshare.org/resource/7d925c7944244032af98c9ed20c22db6/
 
 Nick's Ideas:
 *1. Using characteristics to predict the market value for trading cards
