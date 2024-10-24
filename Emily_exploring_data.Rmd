@@ -14,7 +14,8 @@
           - git rm <file>
           - git restore <file>
         git commit -m "" = Commit changes from terminal with message
-    4. Might need to open GitHub Desktop and verify changes. Then, click "push origin".
+        git push = Publish local changes
+    4. Might need to open GitHub Desktop and verify changes.
 
 ```{r}
 #############
