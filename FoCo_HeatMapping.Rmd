@@ -1,0 +1,101 @@
+This is where I will be exploring the geological start and end locations for the spin cycle datasets provided for our research project. The goals for this portion of the project are:
+
+1.  Use latitude and longitude data to develop a heat map for spin scooter start and end locations.
+
+```{r}
+#libraries
+library(tidyverse)
+library(tidymodels)
+library(sf)
+library(ggplot2)
+library(ggmap)
+library(RColorBrewer)
+library(patchwork)
+library(here)
+```
+
+1. Explore the data.
+
+a)  Load the starting and ending latitude and longitude coordinates into respective data-frames. 
+
+```{r}
+data_dir <- 'FOCO Spin Data'
+start_scoot <- data.frame(read.csv(file.path(data_dir,'fort-collins-curb-events-2021-07-26-2024-10-15-trip_starts.csv')))
+end_scoot <- data.frame(read.csv(file.path(data_dir,'fort-collins-curb-events-2021-07-26-2024-10-15-trip_ends.csv')))
+
+
+head(start_scoot)
+head(end_scoot)
+```
+
+```{r}
+range(start_scoot$latitude)
+range(start_scoot$longitude)
+
+range(end_scoot$latitude)
+range(end_scoot$longitude)
+
+end_scoot |> arrange(desc(longitude))
+```
+
+b)  can we create a map for our data?
+
+```{r}
+register_stadiamaps('dd6906c8-64ba-46a6-966a-4a3556ae9e34',write = TRUE)
+```
+
+```{r}
+foco_map_bounds <- c(left = -105.15, bottom = 40.47, right = -104.97, top = 40.65)
+
+foco_map <- get_stadiamap(foco_map_bounds, zoom = 13, maptype = 'stamen_toner_lite')
+
+foco_coord_map <- ggmap(foco_map, extent = 'device', legend = 'none')
+```
+
+
+
+2. can we generate a heatmap for our data?
+
+```{r}
+start_map <- foco_coord_map + geom_point(data = start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
+
+end_map <- foco_coord_map + stat_density2d(data= end_scoot,  aes(x=longitude, y=latitude, fill=..level.., alpha=..level..), geom="polygon", contour = TRUE, bins = 15, size = 0.2) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'Spectral'))) +  scale_alpha(range = c(0.2, 0.7)) + geom_point(data = end_scoot, aes(x = longitude, y = latitude), alpha = 0.2, size = 0.5)
+
+start_dens_heatmap <- foco_coord_map + stat_density2d(data= start_scoot,  aes(x=longitude, y=latitude, fill=..level..), geom="polygon", contour = TRUE, bins = 20, h = c(0.012, 0.012)) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Density') + theme(panel.grid = element_blank())
+
+start_dens_heatmap + start_map + plot_layout(ncol = 2, guides = 'collect')
+```
+d) this map provides a basic layout of fort collins. perhaps there is a way to enhance the mapping of our data a little more. (outline key features, form boundaries, draw lines at major roads, etc.)
+
+e) This is a good start to my heatmap but the data feels too separated from each other. There is probably a way to base the density bandwidth on the points in our model. We need our model to base density off of the start points nearest to it instead of the overall density of the data. Right now the density model is saying "I'm in a popular location because I live in Fort Collins." we need each point in the data to say instead "I'm in a popular location because theres a lot of other scooters who started/ended their trip nearby me." 
+  
+  After doing some research on the topic I'm led to believe that incorporating a KNN model to our data could be very useful here...
+  
+
+```{r}
+start_split <- initial_split()
+  
+training_start_data <-
+test_start_data <-
+
+
+knn1_spec <- nearest_neighbor(mode = "classification", neighbors = 1)
+
+knn1_spec |>
+  fit(usage ~ latitude + longitude, data = training_start_data) -> knn.fit
+
+knn.test_res <- knn.fit |> augment(new_data = test_start_data)
+
+knn.test_res |> 
+  conf_mat(truth = Direction, estimate = .pred_class)
+
+
+knn.test_res |> 
+  accuracy(truth = Direction, estimate = .pred_class)
+```
+references: 
+
+building a heatmap using ggmap, stadiamaps, & RColor: <https://axelhodler.medium.com/creating-a-heat-map-from-coordinates-using-r-780db4901075>
+
+nearest neighbor mapping: <https://www.espatial.com/blog/nearest-neighbor-map>
+

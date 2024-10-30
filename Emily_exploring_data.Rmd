@@ -1,0 +1,39 @@
+    Working with Git Project:
+    1. Make sure project is set to D445_Project in RStudio
+    2. In RStudio Console:
+        getwd() = Verify working directory is set to this project
+        setwd() = Can change working directory to this path
+        list.files() = Can verify the files are available
+    3. In RStudio Terminal:
+        cd <destination> = Change directory
+        cd - = Go back to previous directory
+        ls = Lists contents of current directory
+        git init = Initialize git connection
+        git status = Check what status needs to be changed before comitting
+          - git  add <file>
+          - git rm <file>
+          - git restore <file>
+        git commit -m "" = Commit changes from terminal with message
+    4. Might need to open GitHub Desktop and verify changes. Then, click "push origin".
+
+```{r}
+#############
+# Libraries #
+#############
+
+
+```
+
+Creating dfs for the price, number of daily bike trips, and the number of daily scooter trips taken over our entire data period.
+
+```{r}
+data_dir <- 'FOCO Spin Data'
+
+df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+df_hourly_price_rate <- data.frame(read.csv(file.path(data_dir,"spin-prices.csv")))
+
+# head(df_daily_scooter_trips)
+# head(df_daily_bike_trips)
+# head(df_hourly_price_rate)
+```

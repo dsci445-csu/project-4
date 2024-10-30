@@ -8,4 +8,24 @@ Our goal here is to cumulate the data sets needed to make the suitable predictio
 The order is from top to lowest priority. 
 If we find the top priority will not form a feasable project, let's switch to the next highest priority
 
-This is a test 
+Predictions:
+Do more EV on the road mean less Spin scooters moving around/active riding time per year?
+Do observations like time of day, day of week, or starting location, predict drop-off/abandonment locations for these scooters?
+Is price a measurable predictor for average riding time?
+Can we predict when a scooter is at its highest risk for abandonment(dropped off at an unverified or undesirable location)?
+At what time are peak riding seasons for Spin scooters.
+
+
+
+Potential Hypothesis testing for our project:
+Main:
+H0: there is no impact on the number of electic vehicles and the usage of Spin scooters over time. Ha: there is an effect
+
+Optional:
+
+Feasable Predictions: 
+Season riding trends per year influenced by price
+Abandonment Predictions
+Map/predict likelihood of scooters returning to charging stations
+predict overall riding trend per year
+
