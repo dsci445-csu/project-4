@@ -1,3 +1,8 @@
 GPS Data: Price ~ Deployment/Start/End 
 Spin uses GPS pinging from each of its deployed micromobile vehicles to track, maintain, and coordinate the scooters & bikes all over the city.
 Prices are also determined using gps data
+
+questions to ask/email: 
+what borders defines 'campus'? campus constraints
+what are matched trips? 
+fleet size?
