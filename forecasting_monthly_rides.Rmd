@@ -1,0 +1,818 @@
+---
+title: "forecasting_monthly_rides"
+author: "Grace Combe"
+date: "2024-11-03"
+output: html_document
+---
+
+**GOAL: forecast scooter usage by month over the next year**
+```{r}
+set.seed(227)
+```
+
+
+```{r}
+# load packages
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(forecast)
+library(forecastHybrid)
+library(fpp2)
+library(TTR)
+library(dplyr)
+library(lubridate)
+library(plotly)
+library(rio)
+library(tseries)
+library(zoo)
+library(keras)
+library(tensorflow)
+```
+
+```{r}
+daily_scooters <- read.csv("FOCO Spin Data/scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")
+daily_scooters <- daily_scooters %>% rename("TripsByDate" = Trips.By.Date...Starts...Spin...Scooters)
+```
+
+```{r}
+daily_scooters$Date <- ymd(daily_scooters$Date)
+daily_scooters$month <- month(daily_scooters$Date)
+daily_scooters$year <- year(daily_scooters$Date)
+#daily_scooters$WeekNum <- isoweek(ymd(daily_scooters$Date))
+```
+
+```{r}
+#week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
+month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
+```
+
+**Exploratory**
+```{r}
+#figure out how to connect dots?
+ggplot(data = month_data, aes(x = month, y = MonthlyRides, color = as.factor(year))) +geom_point()
+```
+
+```{r}
+# month_data <- month_data %>% mutate(adjPrice = case_when(
+#   row_number() <= 17 ~ MonthlyRides/0.30,
+#   row_number() > 17 & row_number() <= 36 ~ MonthlyRides/0.40,
+#   row_number() > 36 ~ MonthlyRides/0.30
+#   )
+# )
+```
+
+```{r}
+#month_data <- month_data %>% rename("OrigRides" = "MonthlyRides", "MonthlyRides" = "adjPrice")
+```
+
+
+**MONTHLY DATA**
+```{r}
+# splitting into train/test; test is data from 2024
+month_data$Class <- if_else(month_data$year == 2024, 'Test', 'Train')
+train <- subset(month_data, Class == 'Train') %>% arrange(year, month)
+test <- subset(month_data, Class == 'Test') %>% arrange(year, month)
+nrow(train)
+nrow(test)
+```
+
+```{r}
+#train <- train %>% filter(year >= 2022) %>% arrange(year, month)
+```
+
+
+```{r}
+# time series
+ts <- ts(train$MonthlyRides, start = c(2021, 7), frequency = 12)
+summary(ts)
+plot(ts)
+```
+
+```{r}
+# Create time series object
+ts_data <- ts(train$MonthlyRides, start = c(2021, 7), frequency = 12)
+
+# Custom weights: Assign higher weight to the first 6 months
+weights <- c(rep(2, 6), rep(1, length(ts_data) - 6))  # Weight 2 for the first 6 months, weight 1 for the rest
+
+# Compute weighted average (use this as a simple example)
+weighted_avg <- sum(ts_data * weights) / sum(weights)
+
+# Print the weighted average
+print(weighted_avg)
+```
+
+
+```{r}
+# mean absolute percentage error to measure accuracy
+mape <- function(actual, pred){
+mape <- mean(abs((actual-pred)/actual))*100
+return(mape)
+}
+```
+
+```{r}
+ddata <- decompose(ts, "multiplicative")
+plot(ddata)
+plot(ddata$trend)
+plot(ddata$seasonal)
+plot(ddata$random)
+plot(ts)
+abline(reg = lm(ts ~time(ts)))
+boxplot(ts ~ cycle(ts, xlab = "month", ylab = "MonthlyRides"))
+mymodel <- auto.arima(ts)
+mymodel
+plot.ts(mymodel$residuals)
+myforecast <- forecast(mymodel, level = c(95), h = 12)
+plot(myforecast)
+forecast <-data.frame(ExpApps = as.numeric(myforecast$mean),
+                      Lower = as.numeric(myforecast$lower),
+                      Upper = as.numeric(myforecast$upper), stringsAsFactors = F)
+```
+
+**ARIMA Model**
+```{r}
+arima_model <- auto.arima(ts, D = 1)
+summary(arima_model)
+```
+
+```{r}
+# mape for test data
+fore_arima = forecast::forecast(arima_model, h = 10)
+df_arima <- as.data.frame(fore_arima)
+test$arima = df_arima$`Point Forecast`
+mape(test$MonthlyRides, test$arima[1:10])
+```
+MAPE 34.33 on test data (with 2021)
+37.87 (without 2021)
+
+
+**Graphing ARIMA Model**
+```{r}
+df_arima <- df_arima %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = arima, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Monthly Rides 2024")
+ggplotly(plot)
+```
+
+```{r}
+model <- auto.arima(ts, D = 1)
+forecasted_values <- forecast(model, h = 12)
+plot(forecasted_values)
+```
+
+**STLF**
+```{r}
+stlf_forecast <- stlf(ts, h = 12)
+plot(stlf_forecast)
+```
+
+```{r}
+df_stlf <- as.data.frame(stlf_forecast)
+test$stlf = df_stlf$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$stlf)
+```
+36.49 mape on test 
+
+**Graphing STLF**
+```{r}
+df_stlf <- df_stlf %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = stlf, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("STLF Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**Another ARIMA**
+```{r}
+arima_forecast <- stlf(ts, h = 12, s.window = "periodic", method = "arima")
+plot(arima_forecast)
+```
+
+```{r}
+df_ar <- as.data.frame(arima_forecast)
+test$ar = df_ar$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$ar)
+```
+29.77 mape on test
+
+```{r}
+df_ar <- df_ar %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = ar, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("ARIMA Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**Hybrid Models**
+```{r}
+library(forecastHybrid)
+mod1 <- hybridModel(ts)
+mod1_forecast <- forecast(mod1, h = 12)
+plot(mod1_forecast)
+```
+
+```{r}
+df_hybrid <- as.data.frame(mod1_forecast)
+test$hybrid = df_hybrid$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$hybrid)
+```
+9.73 mape on test
+
+```{r}
+df_hybrid <- df_hybrid %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = hybrid, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Hybrid Mod1 Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**ARIMA/STLM Hybrid**
+```{r}
+# ARIMA, STLM
+mod_as <- hybridModel(ts, models = "as")
+as_fore <- forecast(mod_as, h = 12)
+plot(as_fore)
+```
+
+```{r}
+df_as <- as.data.frame(as_fore)
+test$as = df_as$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$as)
+```
+21.08 mape on test
+
+```{r}
+df_as <- df_as %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>% 
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#test$AppsForecast <- left_join(test, df_as, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = as, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) + 
+  ggtitle("ARIMA + STLM Num Apps 2024")
+ggplotly(plot)
+```
+
+**ARIMA/STLM/ETS Hybrid**
+```{r}
+# ARIMA, STLM
+mod_aes <- hybridModel(ts, models = "aes")
+aes_fore <- forecast(mod_aes, h = 12)
+plot(aes_fore)
+```
+
+```{r}
+df_aes <- as.data.frame(aes_fore)
+test$aes = df_aes$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$aes)
+```
+17.457 mape on test
+
+```{r}
+df_as <- df_as %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>% 
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#test$AppsForecast <- left_join(test, df_as, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = aes, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) + 
+  ggtitle("ARIMA + STLM + ETS Num Apps 2024")
+ggplotly(plot)
+```
+
+**ARIMA/STLM/ETS/TBATS Hybrid**
+```{r}
+# ARIMA, STLM
+mod_aets <- hybridModel(ts, models = "aets")
+aets_fore <- forecast(mod_aets, h = 12)
+plot(aets_fore)
+```
+
+```{r}
+df_aets <- as.data.frame(aets_fore)
+test$aets = df_aets$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$aets)
+```
+17.631 mape on test
+
+```{r}
+df_aets <- df_aets %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>% 
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#test$AppsForecast <- left_join(test, df_as, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = aets, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) + 
+  ggtitle("ARIMA + STLM +ETS +TBATS Num Apps 2024")
+ggplotly(plot)
+```
+
+
+
+
+**ARIMA/THETA/NNETAR**
+```{r}
+# ARIMA, THETA, NNETAR
+mod_afn <- hybridModel(ts, models = "afn")
+afn_fore <- forecast(mod_afn, h = 12)
+plot(afn_fore)
+```
+
+```{r}
+df_afn <- as.data.frame(afn_fore)
+test$afn = df_afn$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$afn)
+```
+26.09 mape on test
+
+```{r}
+df_afn <- df_afn %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_afn, by = c("Year"= "Year", "Week"="Week"))  %>% rename("afn" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = afn, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("ARIMA + THETAM + NNETAR Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**ARIMA/STLM/THETAM**
+```{r}
+# ARIMA, STLM, THETAM
+mod_afs <- hybridModel(ts, models = "afs")
+afs_fore <- forecast(mod_afs, h = 12)
+plot(afs_fore)
+```
+
+```{r}
+df_afs <- as.data.frame(afs_fore)
+test$afs = df_afs$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$afs)
+```
+19.18 on test
+
+```{r}
+df_afs <- df_afs %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_afs, by = c("Year"= "Year", "Week"="Week"))  %>% rename("afs" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = afs, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("AFS MonthlyRides 2024")
+ggplotly(plot)
+```
+
+
+**Auto ARIMA**
+Exploratory
+```{r}
+train_ts <- ts(train$MonthlyRides)
+train$clean_count <- tsclean(train_ts) # cleans missing data, really bad outliers, etc
+```
+
+```{r}
+# plot cleaned data; not as many outliers
+ggplot() + geom_line(data = train, aes(x = month, y = clean_count)) + ylab('Cleaned Count Rides')
+# plot uncleaned data
+ggplot() + geom_line(data = train, aes(x = month, y = MonthlyRides)) + ylab('Uncleaned Count Rides')
+```
+
+```{r}
+# moving averages
+train$count_ma = ma(train$clean_count, order = 7)
+#train$count_ma30 = ma(train$clean_count, order = )
+#train <- replace(train, TRUE, lapply(train, na.aggregate)) #fills in NAs with column mean
+```
+
+```{r}
+# plot with NAs removed
+# ggplot() +
+#   geom_line(data = train, aes(x = WeekEndingDate, y = clean_count, colour = "Counts")) +
+#   geom_line(data = train, aes(x = WeekEndingDate, y = count_ma, colour = "Weekly Moving Average")) +
+#   geom_line(data = train, aes(x = WeekEndingDate, y = count_ma30, colour = "Monthly Moving Average")) +
+#   ylab('Cleaned Count Apps')
+```
+
+Decomposition
+```{r}
+count_ma <- ts(na.omit(train$clean_count), frequency = 12)
+decomp <- stl(count_ma, "periodic")
+deseasonal_count <- seasadj(decomp) #used in ARIMA model later
+plot(decomp)
+# clear seasonality
+```
+
+```{r}
+# test for stationarity
+adf.test(count_ma, alternative = "stationary")
+# p value of less than 0.05 indicates stationary data set
+```
+0.3861 -> not stationary
+
+```{r}
+# auto correlation and seasonal differencing
+# ACF plots display correlation between a series and its lags; don't want to go outside dotted lines, if so = lags
+Acf(count_ma, main = '') # outside lines
+# PACF plots display correlation between a series and its lags that explained by previous lags
+Pacf(count_ma, main = '') # only two outside lines
+```
+
+```{r}
+# use d = 1 if in bounds, d = 2 if out of bounds (try to use 1 unless you can't)
+count_d2 <- diff(deseasonal_count, differences = 2)
+plot(count_d2)
+```
+
+```{r}
+# retest with adf
+adf.test(count_d2, alternative = "stationary") # yay less than 0.05 now; we want to be as stationary as possible
+```
+
+```{r}
+# look for spikes at specific lag points of the differenced series (using count_d2 from above)
+Acf(count_d2, main = 'ACF for Differenced Series') # all within bounds
+Pacf(count_d2, main = 'PACF for Differenced Series') # all within bounds
+```
+
+Fitting ARIMA model
+```{r}
+# get auto fit p, d, q models
+auto.arima(deseasonal_count, seasonal = FALSE)
+```
+
+```{r}
+# evaluate and iterate - does the model make sense?
+fit <- auto.arima(deseasonal_count, seasonal = FALSE)
+tsdisplay(residuals(fit), lag.max = 30, main = '(0,0,1) Model Residuals') # looks like biggest lag at 24, still in bounds
+```
+
+```{r}
+# adjust for diff = 2, lag at 12
+fit2 <- arima(deseasonal_count, order = c(0,2,12))
+tsdisplay(residuals(fit2), lag.max = 30, main = 'Seasonal Model Residuals')
+```
+
+```{r}
+train$deseasonal_count <- deseasonal_count
+```
+
+```{r}
+# testing
+fit2_forecast <- data.frame(forecast(fit2, h = 10))
+test$fit2 <- fit2_forecast$Point.Forecast
+```
+
+```{r}
+mape(test$MonthlyRides, test$fit2)
+```
+83.01 mape on test
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = fit2, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Fit2 ARIMA Monthly Rides 2024")
+ggplotly(plot)
+```
+
+
+```{r}
+# bring back seasonality?
+seas_fit <- auto.arima(deseasonal_count, seasonal = TRUE)
+seas_forecast <- forecast(seas_fit, h = 10)
+plot(seas_forecast) # straight line is bad
+```
+
+Further testing
+```{r}
+# adjust for diff = 2, lag at 12
+fit3 <- arima(deseasonal_count, order = c(1,2,12))
+tsdisplay(residuals(fit3), lag.max = 104, main = 'Seasonal Model Residuals') # lags look the same
+```
+
+```{r}
+# testing
+fit3_forecast <- data.frame(forecast(fit3, h = 10))
+test$fit3 <- fit3_forecast$Point.Forecast
+```
+
+```{r}
+mape(test$MonthlyRides, test$fit3)
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = fit3, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Fit3 ARIMA Monthly Rides 2024")
+ggplotly(plot)
+```
+
+
+**REFITTING MODELS WITH CLEANED DATA**
+
+```{r}
+ts_clean <- ts(train$clean_count, start = c(2021, 1), frequency = 12)
+```
+
+```{r}
+ddata <- decompose(ts_clean, "multiplicative")
+plot(ddata)
+plot(ddata$trend)
+plot(ddata$seasonal)
+plot(ddata$random)
+plot(ts_clean)
+abline(reg = lm(ts_clean ~time(ts_clean)))
+boxplot(ts_clean ~ cycle(ts_clean, xlab = "MonthOfYear", ylab = "numApps"))
+mymodel <- auto.arima(ts_clean)
+mymodel
+plot.ts(mymodel$residuals)
+myforecast <- forecast(mymodel, level = c(95), h = 12)
+plot(myforecast)
+forecast <-data.frame(ExpApps = as.numeric(myforecast$mean),
+                      Lower = as.numeric(myforecast$lower),
+                      Upper = as.numeric(myforecast$upper), stringsAsFactors = F)
+```
+
+**ARIMA Model**
+```{r}
+arima_model <- auto.arima(ts_clean, D = 1)
+summary(arima_model)
+```
+
+```{r}
+# mape for test data
+fore_arima = forecast::forecast(arima_model, h = 10)
+df_arima <- as.data.frame(fore_arima)
+test$arima = df_arima$`Point Forecast`
+mape(test$numApps, test$arima[1:10])
+```
+
+**Graphing ARIMA Model**
+```{r}
+df_arima <- df_arima %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(df_arima, test, by = c("Year"= "Year", "Week"="WeekNum")) %>% rename("arima1_clean" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = arima1_clean, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**Different ARIMA**
+```{r}
+model <- auto.arima(ts_clean, D = 1)
+forecasted_values <- forecast(model, h = 12)
+plot(forecasted_values)
+```
+
+**STLF on clean**
+```{r}
+stlf_forecast <- stlf(ts_clean, h = 12)
+plot(stlf_forecast)
+```
+
+```{r}
+df_stlf <- as.data.frame(stlf_forecast)
+test$stlf_clean = df_stlf$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$stlf_clean)
+```
+
+**Graphing STLF**
+```{r}
+df_stlf <- df_stlf %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_stlf, by = c("Year"= "Year", "Week"="Week")) %>% rename("stlf_clean" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = stlf_clean, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("STLF Monthly Rides 2024")
+ggplotly(plot)
+```
+
+
+```{r}
+arima_forecast <- stlf(ts_clean, h = 12, s.window = "periodic", method = "arima")
+plot(arima_forecast)
+```
+
+```{r}
+df_ar <- as.data.frame(arima_forecast)
+test$ar_clean = df_ar$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$ar_clean)
+```
+
+```{r}
+df_ar <- df_ar %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_ar, by = c("Year"= "Year", "Week"="Week"))  %>% rename("arima2" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = ar_clean, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("ARIMA Monthly Rides 2024")
+ggplotly(plot)
+```
+
+**Hybrid Models**
+```{r}
+library(forecastHybrid)
+mod1 <- hybridModel(ts_clean)
+mod1_forecast <- forecast(mod1, h = 12)
+plot(mod1_forecast)
+```
+
+```{r}
+df_hybrid2 <- as.data.frame(mod1_forecast)
+test$hybrid2 = df_hybrid2$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$hybrid2)
+```
+
+```{r}
+df_hybrid2 <- df_hybrid2 %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_hybrid2, by = c("Year"= "Year", "Week"="Week"))  %>% rename("hybrid2" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = hybrid2, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Hybrid2 Monthly Rides 2024")
+ggplotly(plot)
+```
+
+
+**ARIMA/STLM**
+```{r}
+# ARIMA, STLM
+mod_as_clean <- hybridModel(ts_clean, models = "as") 
+as_fore_clean <- forecast(mod_as_clean, h = 12)
+plot(as_fore_clean)
+```
+
+```{r}
+df_as_clean <- as.data.frame(as_fore_clean)
+test$as_clean = df_as$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$as_clean)
+```
+
+```{r}
+df_as_clean <- df_as_clean %>% mutate(Month = row_number(),
+                    ForCalc = Month -12,
+                    Year = ifelse(ForCalc > 0, 2025, 2024),
+                    Month = ifelse(ForCalc > 0, ForCalc, Month),
+                    Category = "Forecast") %>%
+  select(Year, Month, `Point Forecast`, `Lo 95`, `Hi 95`)
+```
+
+```{r}
+#joined_data <- left_join(joined_data, df_as_clean, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as2_clean" = "Point Forecast")
+```
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = as2_clean, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("ARIMA + STLM Monthly Rides 2024")
+ggplotly(plot)
+```
