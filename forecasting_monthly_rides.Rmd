@@ -642,7 +642,7 @@ summary(arima_model)
 fore_arima = forecast::forecast(arima_model, h = 10)
 df_arima <- as.data.frame(fore_arima)
 test$arima = df_arima$`Point Forecast`
-mape(test$numApps, test$arima[1:10])
+mape(test$MonthlyRides, test$arima[1:10])
 ```
 
 **Graphing ARIMA Model**
@@ -661,7 +661,7 @@ df_arima <- df_arima %>% mutate(Month = row_number(),
 
 ```{r}
 plot <- ggplot(test, aes(month)) +
-  geom_line(aes(y = arima1_clean, color = "Forecast")) +
+  geom_line(aes(y = arima, color = "Forecast")) +
   geom_line(aes(y = MonthlyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("Monthly Rides 2024")
@@ -810,7 +810,7 @@ df_as_clean <- df_as_clean %>% mutate(Month = row_number(),
 
 ```{r}
 plot <- ggplot(test, aes(month)) +
-  geom_line(aes(y = as2_clean, color = "Forecast")) +
+  geom_line(aes(y = as_clean, color = "Forecast")) +
   geom_line(aes(y = MonthlyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("ARIMA + STLM Monthly Rides 2024")
