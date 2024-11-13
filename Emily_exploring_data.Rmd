@@ -14,7 +14,8 @@
           - git rm <file>
           - git restore <file>
         git commit -m "" = Commit changes from terminal with message
-    4. Might need to open GitHub Desktop and verify changes. Then, click "push origin".
+        git push = Publish local changes
+    4. Might need to open GitHub Desktop and verify changes.
 
 ```{r}
 #############
@@ -29,11 +30,13 @@ Creating dfs for the price, number of daily bike trips, and the number of daily 
 ```{r}
 data_dir <- 'FOCO Spin Data'
 
+# df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+
 df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
-df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
 df_hourly_price_rate <- data.frame(read.csv(file.path(data_dir,"spin-prices.csv")))
 
-# head(df_daily_scooter_trips)
-# head(df_daily_bike_trips)
-# head(df_hourly_price_rate)
+date_deploy <- c("2021-07-26", "2022-11-01", "2023-07-01", "2024-07-01")
+scooter_deploy <- c(500, 500, 540, 630)
+df_sccooters_deployed <- data.frame(Date = date_deploy, 
+                                    Scooters = scooter_deploy)
 ```
