@@ -22,7 +22,8 @@
 # Libraries #
 #############
 
-
+library(dplyr)
+library(ggplot2)
 ```
 
 Creating dfs for the price, number of daily bike trips, and the number of daily scooter trips taken over our entire data period.
@@ -30,13 +31,80 @@ Creating dfs for the price, number of daily bike trips, and the number of daily 
 ```{r}
 data_dir <- 'FOCO Spin Data'
 
+## https://public.ridereport.com/fortcollins
 # df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+# df_hourly_price_rate <- data.frame(read.csv(file.path(data_dir,"spin-prices.csv")))
+# date_deploy <- c("2021-07-26", "2022-11-01", "2023-07-01", "2024-07-01")
+# scooter_deploy <- c(500, 500, 540, 630)
+# df_sccooters_deployed <- data.frame(Date = date_deploy, 
+#                                     Scooters = scooter_deploy)
 
 df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
-df_hourly_price_rate <- data.frame(read.csv(file.path(data_dir,"spin-prices.csv")))
 
-date_deploy <- c("2021-07-26", "2022-11-01", "2023-07-01", "2024-07-01")
-scooter_deploy <- c(500, 500, 540, 630)
-df_sccooters_deployed <- data.frame(Date = date_deploy, 
-                                    Scooters = scooter_deploy)
+## data from July 2021 to December 2021
+df_matched_2021_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2021_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2022_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2022_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2022_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2022_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+
+## data from January 2023 to June 2024
+df_matched_2023_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2023_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2023_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2023_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2024_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+df_matched_2024_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+
+## data from July 2024 to September 2023
+df_matched_2024_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+                         stringsAsFactors = FALSE)
+
+```
+
+```{r}
+# colnames(df_daily_scooter_trips)
+df_daily_scooter_trips$Date <- as.Date(df_daily_scooter_trips$Date)
+# head(df_daily_scooter_trips)
+# str(df_daily_scooter_trips)
+daily_date <- df_daily_scooter_trips$Date
+daily_trips <- df_daily_scooter_trips$Trips.By.Date...Starts...Spin...Scooters
+plot_scooter_rides_daily <- ggplot(data = df_daily_scooter_trips,
+                                   mapping = aes(x = daily_date, 
+                                                 y = daily_trips)) +
+  geom_line() +
+  labs(x = "x",
+       y = "y",
+       title = "title")
+plot_scooter_rides_daily
+```
+
+```{r}
+# head(df_scooter_matched)
+# colnames(df_scooter_matched)
+
+df_scooter_no_geo = subset(df_scooter_matched, 
+                           select = c("Segment.Name", 
+                                      "Percentage.of.Matched.Trips",
+                                      "Count.of.Matched.Trips"))
+# head(df_scooter_no_geo)
+# str(df_scooter_no_geo) ## chr, num, chr
+df_scooter_no_geo$Count.of.Matched.Trips <- gsub(",", "", df_scooter_no_geo$Count.of.Matched.Trips)
+df_scooter_no_geo$Count.of.Matched.Trips <- gsub("< 100", "50", df_scooter_no_geo$Count.of.Matched.Trips)
+df_scooter_no_geo$Count.of.Matched.Trips <- as.numeric(df_scooter_no_geo$Count.of.Matched.Trips)
+df_scooter_numeric <- na.omit(df_scooter_no_geo)
+# str(df_scooter_numeric)
 ```
