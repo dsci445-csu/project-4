@@ -6,6 +6,9 @@ output: html_document
 ---
 
 **GOAL: forecast scooter usage by week over the next year**
+```{r}
+set.seed(227)
+```
 
 ```{r}
 # load packages
@@ -42,7 +45,6 @@ daily_scooters$WeekNum <- isoweek(ymd(daily_scooters$Date))
 week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
 #month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
 ```
-
 
 
 **Exploratory**
