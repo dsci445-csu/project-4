@@ -39,39 +39,39 @@ data_dir <- 'FOCO Spin Data'
 # df_sccooters_deployed <- data.frame(Date = date_deploy, 
 #                                     Scooters = scooter_deploy)
 
-df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
-
-## data from July 2021 to December 2021
-df_matched_2021_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2021_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2022_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2022_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2022_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2022_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-
-## data from January 2023 to June 2024
-df_matched_2023_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2023_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2023_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2023_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2024_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-df_matched_2024_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
-
-## data from July 2024 to September 2023
-df_matched_2024_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
-                         stringsAsFactors = FALSE)
+# df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+# 
+# ## data from July 2021 to December 2021
+# df_matched_2021_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2021_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2022_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2022_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2022_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2022_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# 
+# ## data from January 2023 to June 2024
+# df_matched_2023_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2023_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2023_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2023_q4 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2024_q1 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# df_matched_2024_q2 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
+# 
+# ## data from July 2024 to September 2023
+# df_matched_2024_q3 <- data.frame(read.csv(file.path(data_dir, "")), 
+#                          stringsAsFactors = FALSE)
 
 ```
 
