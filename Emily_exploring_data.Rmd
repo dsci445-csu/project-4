@@ -134,11 +134,18 @@ df_p1 <- data_list[[1]]
 df_p2 <- data_list[[2]]
 df_p3 <- data_list[[3]]
 
-## need to normalize data still
+## need to normalize data still, can do z score or min max, will read later
 
 # df <- df %>%
 #     mutate(
 #       Normalized_Weighted_Avg_Percentage = (Weighted_Average_Percentage - min(Weighted_Average_Percentage, na.rm = TRUE)) / 
 #                                            (max(Weighted_Average_Percentage, na.rm = TRUE) - min(Weighted_Average_Percentage, na.rm = TRUE))
 #     )
+
+# df <- df %>%
+#   mutate(
+#     Z_Score_Weighted_Avg_Percentage = (Weighted_Average_Percentage - mean(Weighted_Average_Percentage, na.rm = TRUE)) / 
+#                                       sd(Weighted_Average_Percentage, na.rm = TRUE)
+#   )
 ```
+
