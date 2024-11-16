@@ -39,16 +39,13 @@ daily_scooters <- daily_scooters %>% rename("TripsByDate" = Trips.By.Date...Star
 
 ```{r}
 daily_scooters$Date <- ymd(daily_scooters$Date)
-#daily_scooters$month <- month(daily_scooters$Date)
 daily_scooters$year <- year(daily_scooters$Date)
 daily_scooters$WeekNum <- isoweek(ymd(daily_scooters$Date))
 ```
 
 ```{r}
 week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
-#month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
 ```
-
 
 **Exploratory**
 ```{r}
@@ -57,6 +54,15 @@ ggplot(data = week_data, aes(x = WeekNum, y = WeeklyRides, color = as.factor(yea
 ```
 
 **WEEKLY DATA**
+```{r}
+# make price variable
+for (i in 1:nrow(week_data)) {
+  week_data$CollegePrice[i] <- ifelse(i <= 71, 0.30, 
+                                      ifelse(i <= 154, 0.4, 0.3))
+  week_data$NormalPrice[i] <- ifelse(i <= 71, 0.30, 0.40)
+}
+```
+
 ```{r}
 # splitting into train/test; test is data from 2024
 week_data$Class <- if_else(week_data$year == 2024, 'Test', 'Train')
@@ -117,15 +123,6 @@ MAPE 64.95 on test data
 
 **Graphing ARIMA Model**
 ```{r}
-# df_arima <- df_arima %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
 #   geom_line(aes(y = arima, color = "Forecast")) +
 #   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -156,21 +153,12 @@ mape(test$WeeklyRides, test$stlf)
 
 **Graphing STLF**
 ```{r}
-# df_stlf <- df_stlf %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
-# plot <- ggplot(test, aes(WeekNum)) +
-#   geom_line(aes(y = stlf, color = "Forecast")) +
-#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
-#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-#   ggtitle("STLF Weekly Rides 2024")
-# ggplotly(plot)
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = stlf, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("STLF Weekly Rides 2024")
+ggplotly(plot)
 ```
 This gets the spike pretty well, but not the beginning
 
@@ -186,15 +174,6 @@ test$ar = df_ar$`Point Forecast`[1:42]
 mape(test$WeeklyRides, test$ar)
 ```
 40.11 mape on test
-
-```{r}
-df_ar <- df_ar %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
 
 ```{r}
 plot <- ggplot(test, aes(WeekNum)) +
@@ -222,15 +201,6 @@ mape(test$WeeklyRides, test$hybrid)
 33.12 mape on test
 
 ```{r}
-df_hybrid <- df_hybrid %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = hybrid, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -256,15 +226,6 @@ mape(test$WeeklyRides, test$as)
 54.25 mape on test
 
 ```{r}
-df_as <- df_as %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>% 
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = as, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -287,16 +248,7 @@ df_afn <- as.data.frame(afn_fore)
 test$afn = df_afn$`Point Forecast`[1:42]
 mape(test$WeeklyRides, test$afn)
 ```
-31.44 mape on test
-
-```{r}
-df_afn <- df_afn %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
+31.88 mape on test
 
 ```{r}
 plot <- ggplot(test, aes(WeekNum)) +
@@ -324,15 +276,6 @@ mape(test$WeeklyRides, test$afs)
 29.69 mape on test
 
 ```{r}
-df_afs <- df_afs %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = afs, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -356,28 +299,30 @@ ggplotly(plot)
 
 **Trying to adjust for price did not help**
 
-**Non-linear models**
+**one model for pre-price change, one model for after**
 ```{r}
-# adding price variable
-week_data <- week_data %>% mutate(CollegePrice = case_when(
-  row_number() <= 71 ~ 0.30,
-  row_number() > 71 & row_number() <= 154 ~ 0.40,
-  row_number() > 154 ~ 0.30
-  )
-) %>% mutate(NormalPrice = case_when(
-  row_number() <= 71 ~ 0.30,
-  row_number() > 71 ~ 0.40
-  )
-)
-
-# have to remake test/train
-week_data$Class <- if_else(week_data$year == 2024, 'Test', 'Train')
-train <- subset(week_data, Class == 'Train') %>% arrange(year, WeekNum)
-test <- subset(week_data, Class == 'Test') %>% arrange(year, WeekNum)
-nrow(train)
-nrow(test)
+for (i in 1:nrow(test)){
+  test$CombinedPred[i] <- ifelse(test$WeekNum[i] < 27, test$afs[i], test$stlf[i])
+}
 ```
 
+```{r}
+mape(test$WeeklyRides, test$CombinedPred)
+```
+29.04 on test
+
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = CombinedPred, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("CombinedPred WeeklyRides 2024") +
+  geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+**BEST**
+
+**Non-linear models**
 Bagging
 ```{r}
 bagging_spec <- rand_forest(mtry = .cols())  %>% 
@@ -387,6 +332,8 @@ bagging_spec <- rand_forest(mtry = .cols())  %>%
 bagging_fit <- bagging_spec %>% 
   fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
 
+vip(bagging_fit)
+
 bagging_pred <- predict(bagging_fit, new_data = test)
 
 test$bagging <- bagging_pred$.pred
@@ -395,7 +342,7 @@ test$bagging <- bagging_pred$.pred
 ```{r}
 mape(test$WeeklyRides, test$bagging)
 ```
-53.14 mape on test
+50.37 mape on test
 
 ```{r}
 plot <- ggplot(test, aes(WeekNum)) +
@@ -409,11 +356,11 @@ Did better at getting the spike!, a little too high but right trend everywhere e
 
 Boosting
 ```{r}
-boost_spec <- boost_tree(trees = 5000, tree_depth = 5, learn_rate = 0.1) %>% #0.1 is better than 0.01
+boost_spec <- boost_tree(trees = 5000, tree_depth = 5, learn_rate = 0.01) %>% 
   set_engine("xgboost") %>% 
   set_mode("regression")
 
-boost_fit <- boost_spec |>
+boost_fit <- boost_spec %>% 
   fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
 
 boost_pred <- predict(boost_fit, new_data = test)
@@ -424,7 +371,7 @@ test$boosting <- boost_pred$.pred
 ```{r}
 mape(test$WeeklyRides, test$boosting)
 ```
-46.26 mape on test
+43.41 mape on test
 
 ```{r}
 plot <- ggplot(test, aes(WeekNum)) +
@@ -438,32 +385,34 @@ captures spike but needs to be better in beginning
 
 Random Forest--Not good
 ```{r}
-# rf_spec <- rand_forest(mtry = sqrt(.cols()))  %>% 
-#   set_engine("randomForest", importance = TRUE) %>% 
-#   set_mode("regression")
-# 
-# rf_fit <- rf_spec %>% 
-#   fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
-# 
-# rf_pred <- predict(rf_fit, new_data = test)
-# 
-# test$rf <- rf_pred$.pred
+rf_spec <- rand_forest(mtry = sqrt(.cols()))  %>%
+  set_engine("randomForest", importance = TRUE) %>%
+  set_mode("regression")
+
+rf_fit <- rf_spec %>%
+  fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
+
+rf_pred <- predict(rf_fit, new_data = test)
+
+test$rf <- rf_pred$.pred
 ```
 
 ```{r}
-#mape(test$WeeklyRides, test$rf)
+mape(test$WeeklyRides, test$rf)
 ```
-102.97 mape on test
+74.81 mape on test
 
 ```{r}
-# plot <- ggplot(test, aes(WeekNum)) +
-#   geom_line(aes(y = rf, color = "Forecast")) +
-#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
-#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-#   ggtitle("RF WeeklyRides 2024")
-# ggplotly(plot)
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = rf, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("RF WeeklyRides 2024")
+ggplotly(plot)
 ```
 
+
+-------------------None of this is good, ignore-----------------------------
 **Trying to improve best model from before (ARIMA/STLM/THETAM) with boosting/bagging**
 **Neither of these worked well: both way too low**
 ```{r}
@@ -516,7 +465,6 @@ Random Forest--Not good
 # ggplotly(plot)
 ```
 
-
 This one did not work well
 ```{r}
 # # Fit additional models (ARIMA, STLM, Theta)
@@ -565,9 +513,6 @@ This one did not work well
 ```
 Way too low
 
-
-
--------------------None of this is good, ignore-----------------------------
 **Auto ARIMA**
 Exploratory
 ```{r}
@@ -755,15 +700,6 @@ Further testing
 
 **Graphing ARIMA Model**
 ```{r}
-# df_arima <- df_arima %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
 #   geom_line(aes(y = arima, color = "Forecast")) +
 #   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -794,15 +730,6 @@ Further testing
 
 **Graphing STLF**
 ```{r}
-# df_stlf <- df_stlf %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
 #   geom_line(aes(y = stlf_clean, color = "Forecast")) +
 #   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -822,15 +749,6 @@ Further testing
 # mape(test$WeeklyRides, test$ar_clean)
 ```
 42.31 mape on test
-
-```{r}
-# df_ar <- df_ar %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
 
 ```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
@@ -857,19 +775,6 @@ Further testing
 33.58 mape on test
 
 ```{r}
-# df_hybrid2 <- df_hybrid2 %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
-#joined_data <- left_join(joined_data, df_hybrid2, by = c("Year"= "Year", "Week"="Week"))  %>% rename("hybrid2" = "Point Forecast")
-```
-
-```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
 #   geom_line(aes(y = hybrid2, color = "Forecast")) +
 #   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -892,19 +797,6 @@ Further testing
 # mape(test$WeeklyRides, test$as_clean)
 ```
 54.25 mape on test
-
-```{r}
-# df_as_clean <- df_as_clean %>% mutate(Week = row_number(),
-#                     ForCalc = Week -52,
-#                     Year = ifelse(ForCalc > 0, 2025, 2024),
-#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
-#                     Category = "Forecast") %>%
-#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
-```
-
-```{r}
-#joined_data <- left_join(joined_data, df_as_clean, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as2_clean" = "Point Forecast")
-```
 
 ```{r}
 # plot <- ggplot(test, aes(WeekNum)) +
