@@ -13,6 +13,9 @@ set.seed(227)
 ```{r}
 # load packages
 library(tidyverse)
+library(tidymodels)
+library(randomForest)
+library(xgboost)
 library(readr)
 library(ggplot2)
 library(forecast)
@@ -52,9 +55,6 @@ week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRide
 #figure out how to connect dots?
 ggplot(data = week_data, aes(x = WeekNum, y = WeeklyRides, color = as.factor(year))) +geom_point()
 ```
-
-
-
 
 **WEEKLY DATA**
 ```{r}
@@ -115,30 +115,30 @@ mape(test$WeeklyRides, test$arima[1:42])
 ```
 MAPE 64.95 on test data
 
-
 **Graphing ARIMA Model**
 ```{r}
-df_arima <- df_arima %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_arima <- df_arima %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = arima, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = arima, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("Weekly Rides 2024")
+# ggplotly(plot)
 ```
+Not really good anywhere
 
 ```{r}
-model <- auto.arima(ts, D = 1)
-forecasted_values <- forecast(model, h = 52)
-plot(forecasted_values) # going negative, not good
+# model <- auto.arima(ts, D = 1)
+# forecasted_values <- forecast(model, h = 52)
+# plot(forecasted_values) # going negative, not good
 ```
 
 **STLF**
@@ -152,26 +152,27 @@ df_stlf <- as.data.frame(stlf_forecast)
 test$stlf = df_stlf$`Point Forecast`[1:42]
 mape(test$WeeklyRides, test$stlf)
 ```
-47.12 mape on test 
+47.12 mape on test (next one is slightly more accurate)
 
 **Graphing STLF**
 ```{r}
-df_stlf <- df_stlf %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_stlf <- df_stlf %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = stlf, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("STLF Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = stlf, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("STLF Weekly Rides 2024")
+# ggplotly(plot)
 ```
+This gets the spike pretty well, but not the beginning
 
 **Another ARIMA**
 ```{r}
@@ -203,6 +204,7 @@ plot <- ggplot(test, aes(WeekNum)) +
   ggtitle("ARIMA Weekly Rides 2024")
 ggplotly(plot)
 ```
+Gets the spike pretty well, best so far
 
 **Hybrid Models**
 ```{r}
@@ -217,7 +219,7 @@ df_hybrid <- as.data.frame(mod1_forecast)
 test$hybrid = df_hybrid$`Point Forecast`[1:42]
 mape(test$WeeklyRides, test$hybrid)
 ```
-32.97 mape on test
+33.12 mape on test
 
 ```{r}
 df_hybrid <- df_hybrid %>% mutate(Week = row_number(),
@@ -236,6 +238,7 @@ plot <- ggplot(test, aes(WeekNum)) +
   ggtitle("Hybrid Mod1 Weekly Rides 2024")
 ggplotly(plot)
 ```
+Doesn't get the spike, but beginning is pretty good
 
 **ARIMA/STLM Hybrid**
 ```{r}
@@ -262,10 +265,6 @@ df_as <- df_as %>% mutate(Week = row_number(),
 ```
 
 ```{r}
-#test$AppsForecast <- left_join(test, df_as, by = c("Year"= "Year", "Week"="Week"))  %>% rename("as" = "Point Forecast")
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = as, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -273,8 +272,9 @@ plot <- ggplot(test, aes(WeekNum)) +
   ggtitle("ARIMA + STLM Num Apps 2024")
 ggplotly(plot)
 ```
+Gets the spike pretty well, but not so much the beginning
 
-**ARIMA/THETA/NNETAR
+**ARIMA/THETA/NNETAR**
 ```{r}
 # ARIMA, THETA, NNETAR
 mod_afn <- hybridModel(ts, models = "afn")
@@ -299,10 +299,6 @@ df_afn <- df_afn %>% mutate(Week = row_number(),
 ```
 
 ```{r}
-#joined_data <- left_join(joined_data, df_afn, by = c("Year"= "Year", "Week"="Week"))  %>% rename("afn" = "Point Forecast")
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = afn, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -310,6 +306,7 @@ plot <- ggplot(test, aes(WeekNum)) +
   ggtitle("ARIMA + THETAM + NNETAR Weekly Rides 2024")
 ggplotly(plot)
 ```
+Really good on beginning, but doesn't get spike
 
 **ARIMA/STLM/THETAM**
 ```{r}
@@ -336,10 +333,6 @@ df_afs <- df_afs %>% mutate(Week = row_number(),
 ```
 
 ```{r}
-#joined_data <- left_join(joined_data, df_afs, by = c("Year"= "Year", "Week"="Week"))  %>% rename("afs" = "Point Forecast")
-```
-
-```{r}
 plot <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = afs, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
@@ -347,13 +340,239 @@ plot <- ggplot(test, aes(WeekNum)) +
   ggtitle("AFS WeeklyRides 2024")
 ggplotly(plot)
 ```
+Really good on beginning, but doesn't get spike; BEST SO FAR
+
+**For visualizing price change**
+Price dropped to $0.30 for college area on July 1, 2024 (Week 27)
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = afs, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("AFS WeeklyRides 2024") +
+  geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+**Trying to adjust for price did not help**
+
+**Non-linear models**
+```{r}
+# adding price variable
+week_data <- week_data %>% mutate(CollegePrice = case_when(
+  row_number() <= 71 ~ 0.30,
+  row_number() > 71 & row_number() <= 154 ~ 0.40,
+  row_number() > 154 ~ 0.30
+  )
+) %>% mutate(NormalPrice = case_when(
+  row_number() <= 71 ~ 0.30,
+  row_number() > 71 ~ 0.40
+  )
+)
+
+# have to remake test/train
+week_data$Class <- if_else(week_data$year == 2024, 'Test', 'Train')
+train <- subset(week_data, Class == 'Train') %>% arrange(year, WeekNum)
+test <- subset(week_data, Class == 'Test') %>% arrange(year, WeekNum)
+nrow(train)
+nrow(test)
+```
+
+Bagging
+```{r}
+bagging_spec <- rand_forest(mtry = .cols())  %>% 
+  set_engine("randomForest", importance = TRUE) %>% 
+  set_mode("regression")
+
+bagging_fit <- bagging_spec %>% 
+  fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
+
+bagging_pred <- predict(bagging_fit, new_data = test)
+
+test$bagging <- bagging_pred$.pred
+```
+
+```{r}
+mape(test$WeeklyRides, test$bagging)
+```
+53.14 mape on test
+
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = bagging, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Bagging WeeklyRides 2024")
+ggplotly(plot)
+```
+Did better at getting the spike!, a little too high but right trend everywhere else
+
+Boosting
+```{r}
+boost_spec <- boost_tree(trees = 5000, tree_depth = 5, learn_rate = 0.1) %>% #0.1 is better than 0.01
+  set_engine("xgboost") %>% 
+  set_mode("regression")
+
+boost_fit <- boost_spec |>
+  fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
+
+boost_pred <- predict(boost_fit, new_data = test)
+
+test$boosting <- boost_pred$.pred
+```
+
+```{r}
+mape(test$WeeklyRides, test$boosting)
+```
+46.26 mape on test
+
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = boosting, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Boosting WeeklyRides 2024")
+ggplotly(plot)
+```
+captures spike but needs to be better in beginning
+
+Random Forest--Not good
+```{r}
+# rf_spec <- rand_forest(mtry = sqrt(.cols()))  %>% 
+#   set_engine("randomForest", importance = TRUE) %>% 
+#   set_mode("regression")
+# 
+# rf_fit <- rf_spec %>% 
+#   fit(WeeklyRides ~ as.factor(WeekNum) + CollegePrice + NormalPrice, data = train)
+# 
+# rf_pred <- predict(rf_fit, new_data = test)
+# 
+# test$rf <- rf_pred$.pred
+```
+
+```{r}
+#mape(test$WeeklyRides, test$rf)
+```
+102.97 mape on test
+
+```{r}
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = rf, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("RF WeeklyRides 2024")
+# ggplotly(plot)
+```
+
+**Trying to improve best model from before (ARIMA/STLM/THETAM) with boosting/bagging**
+**Neither of these worked well: both way too low**
+```{r}
+# # Get residuals from the hybrid model
+# residuals_afs <- residuals(mod_afs)
+# 
+# # Create lag features from the residuals
+# residuals_df <- data.frame(
+#   residuals = as.vector(residuals_afs),
+#   lag1 = as.numeric(lag(as.vector(residuals_afs), 1)),
+#   lag2 = as.numeric(lag(as.vector(residuals_afs), 2))
+# )
+# residuals_df <- na.omit(residuals_df)  # Remove NAs created by lagging
+# 
+# # Define target and predictors
+# target_residual <- residuals_df$residuals
+# predictors_residual <- residuals_df[, -1]
+# 
+# # Train an XGBoost model on the residuals
+# dtrain <- xgb.DMatrix(data = as.matrix(predictors_residual), label = target_residual)
+# params <- list(objective = "reg:squarederror", max_depth = 5, eta = 0.1)
+# xgb_model <- xgboost(params = params, data = dtrain, nrounds = 100)
+# 
+# # Predict the residuals for the forecast period
+# lagged_residuals <- residuals_afs[(length(residuals_afs) - 1):(length(residuals_afs) - 2)]
+# predictions_residuals <- predict(xgb_model, as.matrix(lagged_residuals))
+# 
+# # Add predicted residuals to the hybrid forecast
+# improved_forecast <- as.data.frame(afs_fore$mean + predictions_residuals)
+# 
+# # Plot the improved forecast
+# plot(improved_forecast, main = "Improved Forecast with XGBoost on Residuals")
+```
+
+```{r}
+# test$other_boost <- improved_forecast$x[1:42]
+```
+
+```{r}
+# mape(test$WeeklyRides, test$other_boost)
+```
+62.001 mape on test
+
+```{r}
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = other_boost, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("AFS with Boosting WeeklyRides 2024")
+# ggplotly(plot)
+```
 
 
+This one did not work well
+```{r}
+# # Fit additional models (ARIMA, STLM, Theta)
+# mod_arima <- auto.arima(ts)
+# mod_stlm <- stlm(ts)
+# mod_theta <- thetaf(ts, h = 52)
+# 
+# # Forecast with each model
+# forecast_arima <- forecast(mod_arima, h = 52)$mean
+# forecast_stlm <- forecast(mod_stlm, h = 52)$mean
+# forecast_theta <- mod_theta$mean
+# 
+# # Combine the predictions from different models
+# combined_predictions <- data.frame(
+#   hybrid = afs_fore$mean,
+#   arima = forecast_arima,
+#   stlm = forecast_stlm,
+#   theta = forecast_theta
+# )
+# 
+# # Train an XGBoost model to combine the forecasts
+# dtrain <- xgb.DMatrix(data = as.matrix(combined_predictions), label = afs_fore$mean)
+# params <- list(objective = "reg:squarederror", max_depth = 5, eta = 0.1)
+# xgb_model <- xgboost(params = params, data = dtrain, nrounds = 100)
+# 
+# # Make final forecast using the ensemble model
+# final_predictions <- as.data.frame(predict(xgb_model, as.matrix(combined_predictions)))
+```
+
+```{r}
+# test$afs_boost <- final_predictions$`predict(xgb_model, as.matrix(combined_predictions))`[1:42]
+```
+
+```{r}
+# mape(test$WeeklyRides, test$afs_boost)
+```
+67.471 mape on test
+
+```{r}
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = afs_boost, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("AFS with Boosting WeeklyRides 2024")
+# ggplotly(plot)
+```
+Way too low
+
+
+
+-------------------None of this is good, ignore-----------------------------
 **Auto ARIMA**
 Exploratory
 ```{r}
-train_ts <- ts(train$WeeklyRides)
-train$clean_count <- tsclean(train_ts) # cleans missing data, really bad outliers, etc
+# train_ts <- ts(train$WeeklyRides)
+# train$clean_count <- tsclean(train_ts) # cleans missing data, really bad outliers, etc
 ```
 
 ```{r}
@@ -365,9 +584,9 @@ train$clean_count <- tsclean(train_ts) # cleans missing data, really bad outlier
 
 ```{r}
 # moving averages
-train$count_ma = ma(train$clean_count, order = 7)
-train$count_ma30 = ma(train$clean_count, order = 30)
-train <- replace(train, TRUE, lapply(train, na.aggregate)) #fills in NAs with column mean
+# train$count_ma = ma(train$clean_count, order = 7)
+# train$count_ma30 = ma(train$clean_count, order = 30)
+# train <- replace(train, TRUE, lapply(train, na.aggregate)) #fills in NAs with column mean
 ```
 
 ```{r}
@@ -381,286 +600,269 @@ train <- replace(train, TRUE, lapply(train, na.aggregate)) #fills in NAs with co
 
 Decomposition
 ```{r}
-count_ma <- ts(na.omit(train$clean_count), frequency = 52)
-decomp <- stl(count_ma, "periodic")
-deseasonal_count <- seasadj(decomp) #used in ARIMA model later
-plot(decomp)
+# count_ma <- ts(na.omit(train$clean_count), frequency = 52)
+# decomp <- stl(count_ma, "periodic")
+# deseasonal_count <- seasadj(decomp) #used in ARIMA model later
+# plot(decomp)
 # clear seasonality
 ```
 
 ```{r}
 # test for stationarity
-adf.test(count_ma, alternative = "stationary")
+# adf.test(count_ma, alternative = "stationary")
 # p value of less than 0.05 indicates stationary data set; 0.07
 ```
-
 
 ```{r}
 # auto correlation and seasonal differencing
 # ACF plots display correlation between a series and its lags; don't want to go outside dotted lines, if so = lags
-Acf(count_ma, main = '') # outside lines
+# Acf(count_ma, main = '') # outside lines
 # PACF plots display correlation between a series and its lags that explained by previous lags
-Pacf(count_ma, main = '') # only one outside lines
+# Pacf(count_ma, main = '') # only one outside lines
 ```
 
 ```{r}
 # use d = 1 if in bounds, d = 2 if out of bounds (try to use 1 unless you can't)
-count_d2 <- diff(deseasonal_count, differences = 2)
-plot(count_d2)
+# count_d2 <- diff(deseasonal_count, differences = 2)
+# plot(count_d2)
 ```
 
 ```{r}
 # retest with adf
-adf.test(count_d2, alternative = "stationary") # yay less than 0.05 now; we want to be as stationary as possible
+# adf.test(count_d2, alternative = "stationary") # yay less than 0.05 now; we want to be as stationary as possible
 ```
 
 ```{r}
 # look for spikes at specific lag points of the differenced series (using count_d2 from above)
-Acf(count_d2, main = 'ACF for Differenced Series') # biggest lag at 1
-Pacf(count_d2, main = 'PACF for Differenced Series') # biggest lag at 1 again
+# Acf(count_d2, main = 'ACF for Differenced Series') # biggest lag at 1
+# Pacf(count_d2, main = 'PACF for Differenced Series') # biggest lag at 1 again
 ```
 
 Fitting ARIMA model
 ```{r}
 # get auto fit p, d, q models
-auto.arima(deseasonal_count, seasonal = FALSE)
+# auto.arima(deseasonal_count, seasonal = FALSE)
 ```
 
 ```{r}
 # evaluate and iterate - does the model make sense?
-fit <- auto.arima(deseasonal_count, seasonal = FALSE)
-tsdisplay(residuals(fit), lag.max = 52, main = '(2,1,1) Model Residuals') # looks like biggest lag at 52
+# fit <- auto.arima(deseasonal_count, seasonal = FALSE)
+# tsdisplay(residuals(fit), lag.max = 52, main = '(2,1,1) Model Residuals') # looks like biggest lag at 52
 ```
 
 ```{r}
 # adjust for diff = 2, lag at 52
-fit2 <- arima(deseasonal_count, order = c(0,2,52))
-tsdisplay(residuals(fit2), lag.max = 52, main = 'Seasonal Model Residuals')
+# fit2 <- arima(deseasonal_count, order = c(0,2,52))
+# tsdisplay(residuals(fit2), lag.max = 52, main = 'Seasonal Model Residuals')
 ```
 
 ```{r}
-train$deseasonal_count <- deseasonal_count
+# train$deseasonal_count <- deseasonal_count
 ```
 
 ```{r}
 # testing
-fit2_forecast <- data.frame(forecast(fit2, h = 42))
-test$fit2 <- fit2_forecast$Point.Forecast
+# fit2_forecast <- data.frame(forecast(fit2, h = 42))
+# test$fit2 <- fit2_forecast$Point.Forecast
 ```
 
 ```{r}
-mape(test$WeeklyRides, test$fit2)
+# mape(test$WeeklyRides, test$fit2)
 ```
 113.06 mape on test
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = fit2, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("Fit2 ARIMA Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = fit2, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("Fit2 ARIMA Weekly Rides 2024")
+# ggplotly(plot)
 ```
-
 
 ```{r}
 # bring back seasonality?
-seas_fit <- auto.arima(deseasonal_count, seasonal = TRUE)
-seas_forecast <- forecast(seas_fit, h = 42)
-plot(seas_forecast) # straight line is bad
+# seas_fit <- auto.arima(deseasonal_count, seasonal = TRUE)
+# seas_forecast <- forecast(seas_fit, h = 42)
+# plot(seas_forecast) # straight line is bad
 ```
 
 Further testing
 ```{r}
 # adjust for diff = 2, lag at 52
-fit3 <- arima(deseasonal_count, order = c(1,2,52))
-tsdisplay(residuals(fit3), lag.max = 52, main = 'Seasonal Model Residuals') # lags look the same
+# fit3 <- arima(deseasonal_count, order = c(1,2,52))
+# tsdisplay(residuals(fit3), lag.max = 52, main = 'Seasonal Model Residuals') # lags look the same
 ```
 
 ```{r}
 # testing
-fit3_forecast <- data.frame(forecast(fit3, h = 42))
-test$fit3 <- fit3_forecast$Point.Forecast
+# fit3_forecast <- data.frame(forecast(fit3, h = 42))
+# test$fit3 <- fit3_forecast$Point.Forecast
 ```
 
 ```{r}
-mape(test$WeeklyRides, test$fit3)
+# mape(test$WeeklyRides, test$fit3)
 ```
 112.29 mape on test
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = fit3, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("Fit3 ARIMA Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = fit3, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("Fit3 ARIMA Weekly Rides 2024")
+# ggplotly(plot)
 ```
-
 
 **REFITTING MODELS WITH CLEANED DATA**
-
 ```{r}
-ts_clean <- ts(train$clean_count, start = c(2021, 1), frequency = 52)
+# ts_clean <- ts(train$clean_count, start = c(2021, 1), frequency = 52)
 ```
 
 ```{r}
-ddata <- decompose(ts_clean, "multiplicative")
-plot(ddata)
-plot(ddata$trend)
-plot(ddata$seasonal)
-plot(ddata$random)
-plot(ts_clean)
-abline(reg = lm(ts_clean ~time(ts_clean)))
-boxplot(ts_clean ~ cycle(ts_clean, xlab = "WeekOfYear", ylab = "numApps"))
-mymodel <- auto.arima(ts_clean)
-mymodel
-plot.ts(mymodel$residuals)
-myforecast <- forecast(mymodel, level = c(95), h = 52)
-plot(myforecast)
-forecast <-data.frame(ExpApps = as.numeric(myforecast$mean),
-                      Lower = as.numeric(myforecast$lower),
-                      Upper = as.numeric(myforecast$upper), stringsAsFactors = F)
+# ddata <- decompose(ts_clean, "multiplicative")
+# plot(ddata)
+# plot(ddata$trend)
+# plot(ddata$seasonal)
+# plot(ddata$random)
+# plot(ts_clean)
+# abline(reg = lm(ts_clean ~time(ts_clean)))
+# boxplot(ts_clean ~ cycle(ts_clean, xlab = "WeekOfYear", ylab = "numApps"))
+# mymodel <- auto.arima(ts_clean)
+# mymodel
+# plot.ts(mymodel$residuals)
+# myforecast <- forecast(mymodel, level = c(95), h = 52)
+# plot(myforecast)
+# forecast <-data.frame(ExpApps = as.numeric(myforecast$mean),
+#                       Lower = as.numeric(myforecast$lower),
+#                       Upper = as.numeric(myforecast$upper), stringsAsFactors = F)
 ```
 
 **ARIMA Model**
 ```{r}
-arima_model <- auto.arima(ts_clean, D = 1)
-summary(arima_model)
+# arima_model <- auto.arima(ts_clean, D = 1)
+# summary(arima_model)
 ```
 
 ```{r}
 # mape for test data
-fore_arima = forecast::forecast(arima_model, h = 42)
-df_arima <- as.data.frame(fore_arima)
-test$arima = df_arima$`Point Forecast`
-mape(test$WeeklyRides, test$arima[1:42])
+# fore_arima = forecast::forecast(arima_model, h = 42)
+# df_arima <- as.data.frame(fore_arima)
+# test$arima = df_arima$`Point Forecast`
+# mape(test$WeeklyRides, test$arima[1:42])
 ```
 66.40 mape on test
 
 **Graphing ARIMA Model**
 ```{r}
-df_arima <- df_arima %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_arima <- df_arima %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
-#joined_data <- left_join(df_arima, test, by = c("Year"= "Year", "Week"="WeekNum")) %>% rename("arima1_clean" = "Point Forecast")
-```
-
-```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = arima, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = arima, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("Weekly Rides 2024")
+# ggplotly(plot)
 ```
 
 **Different ARIMA**
 ```{r}
-model <- auto.arima(ts_clean, D = 1)
-forecasted_values <- forecast(model, h = 52)
-plot(forecasted_values)
+# model <- auto.arima(ts_clean, D = 1)
+# forecasted_values <- forecast(model, h = 52)
+# plot(forecasted_values)
 ```
 
 **STLF on clean**
 ```{r}
-stlf_forecast <- stlf(ts_clean, h = 52)
-plot(stlf_forecast)
+# stlf_forecast <- stlf(ts_clean, h = 52)
+# plot(stlf_forecast)
 ```
 
 ```{r}
-df_stlf <- as.data.frame(stlf_forecast)
-test$stlf_clean = df_stlf$`Point Forecast`[1:42]
-mape(test$WeeklyRides, test$stlf_clean)
+# df_stlf <- as.data.frame(stlf_forecast)
+# test$stlf_clean = df_stlf$`Point Forecast`[1:42]
+# mape(test$WeeklyRides, test$stlf_clean)
 ```
 46.39 mape on test
 
 **Graphing STLF**
 ```{r}
-df_stlf <- df_stlf %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_stlf <- df_stlf %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
-#joined_data <- left_join(joined_data, df_stlf, by = c("Year"= "Year", "Week"="Week")) %>% rename("stlf_clean" = "Point Forecast")
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = stlf_clean, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("STLF Weekly Rides 2024")
+# ggplotly(plot)
 ```
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = stlf_clean, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("STLF Weekly Rides 2024")
-ggplotly(plot)
-```
-
-
-```{r}
-arima_forecast <- stlf(ts_clean, h = 52, s.window = "periodic", method = "arima")
-plot(arima_forecast)
+# arima_forecast <- stlf(ts_clean, h = 52, s.window = "periodic", method = "arima")
+# plot(arima_forecast)
 ```
 
 ```{r}
-df_ar <- as.data.frame(arima_forecast)
-test$ar_clean = df_ar$`Point Forecast`[1:42]
-mape(test$WeeklyRides, test$ar_clean)
+# df_ar <- as.data.frame(arima_forecast)
+# test$ar_clean = df_ar$`Point Forecast`[1:42]
+# mape(test$WeeklyRides, test$ar_clean)
 ```
 42.31 mape on test
 
 ```{r}
-df_ar <- df_ar %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_ar <- df_ar %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
-#joined_data <- left_join(joined_data, df_ar, by = c("Year"= "Year", "Week"="Week"))  %>% rename("arima2" = "Point Forecast")
-```
-
-```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = ar_clean, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("ARIMA Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = ar_clean, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("ARIMA Weekly Rides 2024")
+# ggplotly(plot)
 ```
 
 **Hybrid Models**
 ```{r}
-library(forecastHybrid)
-mod1 <- hybridModel(ts_clean)
-mod1_forecast <- forecast(mod1, h = 52)
-plot(mod1_forecast)
+# library(forecastHybrid)
+# mod1 <- hybridModel(ts_clean)
+# mod1_forecast <- forecast(mod1, h = 52)
+# plot(mod1_forecast)
 ```
 
 ```{r}
-df_hybrid2 <- as.data.frame(mod1_forecast)
-test$hybrid2 = df_hybrid2$`Point Forecast`[1:42]
-mape(test$WeeklyRides, test$hybrid2)
+# df_hybrid2 <- as.data.frame(mod1_forecast)
+# test$hybrid2 = df_hybrid2$`Point Forecast`[1:42]
+# mape(test$WeeklyRides, test$hybrid2)
 ```
 33.58 mape on test
 
 ```{r}
-df_hybrid2 <- df_hybrid2 %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_hybrid2 <- df_hybrid2 %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
@@ -668,37 +870,36 @@ df_hybrid2 <- df_hybrid2 %>% mutate(Week = row_number(),
 ```
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = hybrid2, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("Hybrid2 Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = hybrid2, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("Hybrid2 Weekly Rides 2024")
+# ggplotly(plot)
 ```
-
 
 **ARIMA/STLM**
 ```{r}
 # ARIMA, STLM
-mod_as_clean <- hybridModel(ts_clean, models = "as") # no ets bc h >24
-as_fore_clean <- forecast(mod_as_clean, h = 52)
-plot(as_fore_clean)
+# mod_as_clean <- hybridModel(ts_clean, models = "as") # no ets bc h >24
+# as_fore_clean <- forecast(mod_as_clean, h = 52)
+# plot(as_fore_clean)
 ```
 
 ```{r}
-df_as_clean <- as.data.frame(as_fore_clean)
-test$as_clean = df_as$`Point Forecast`[1:42]
-mape(test$WeeklyRides, test$as_clean)
+# df_as_clean <- as.data.frame(as_fore_clean)
+# test$as_clean = df_as$`Point Forecast`[1:42]
+# mape(test$WeeklyRides, test$as_clean)
 ```
 54.25 mape on test
 
 ```{r}
-df_as_clean <- df_as_clean %>% mutate(Week = row_number(),
-                    ForCalc = Week -52,
-                    Year = ifelse(ForCalc > 0, 2025, 2024),
-                    Week = ifelse(ForCalc > 0, ForCalc, Week),
-                    Category = "Forecast") %>%
-  select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
+# df_as_clean <- df_as_clean %>% mutate(Week = row_number(),
+#                     ForCalc = Week -52,
+#                     Year = ifelse(ForCalc > 0, 2025, 2024),
+#                     Week = ifelse(ForCalc > 0, ForCalc, Week),
+#                     Category = "Forecast") %>%
+#   select(Year, Week, `Point Forecast`, `Lo 95`, `Hi 95`)
 ```
 
 ```{r}
@@ -706,19 +907,11 @@ df_as_clean <- df_as_clean %>% mutate(Week = row_number(),
 ```
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
-  geom_line(aes(y = as_clean, color = "Forecast")) +
-  geom_line(aes(y = WeeklyRides, color = "Actual"))+
-  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
-  ggtitle("ARIMA + STLM Weekly Rides 2024")
-ggplotly(plot)
+# plot <- ggplot(test, aes(WeekNum)) +
+#   geom_line(aes(y = as_clean, color = "Forecast")) +
+#   geom_line(aes(y = WeeklyRides, color = "Actual"))+
+#   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+#   ggtitle("ARIMA + STLM Weekly Rides 2024")
+# ggplotly(plot)
 ```
-
-
-
-
-
-
-
-
-
+---------------------------------------------------------------
