@@ -133,19 +133,113 @@ for (i in seq_along(data_list)) {
 df_p1 <- data_list[[1]]
 df_p2 <- data_list[[2]]
 df_p3 <- data_list[[3]]
+df_matched_trips <- rbind(df_p1, df_p2, df_p3)
 
-## need to normalize data still, can do z score or min max, will read later
+df_matched_trips <- df_matched_trips %>%
+    mutate(
+      Normalized_Weighted_Avg_Percentage = (Weighted_Average_Percentage - min(Weighted_Average_Percentage)) / (max(Weighted_Average_Percentage) - min(Weighted_Average_Percentage))
+      )
 
-# df <- df %>%
-#     mutate(
-#       Normalized_Weighted_Avg_Percentage = (Weighted_Average_Percentage - min(Weighted_Average_Percentage, na.rm = TRUE)) / 
-#                                            (max(Weighted_Average_Percentage, na.rm = TRUE) - min(Weighted_Average_Percentage, na.rm = TRUE))
-#     )
-
-# df <- df %>%
-#   mutate(
-#     Z_Score_Weighted_Avg_Percentage = (Weighted_Average_Percentage - mean(Weighted_Average_Percentage, na.rm = TRUE)) / 
-#                                       sd(Weighted_Average_Percentage, na.rm = TRUE)
-#   )
+# head(df_matched_trips)
 ```
+
+```{r}
+df_matched_2021_q3$Quarter<- "2021 Q3"
+df_matched_2021_q3$Price_Period <- "1"
+df_matched_2021_q4$Quarter<- "2021 Q4"
+df_matched_2021_q4$Price_Period <- "1"
+df_matched_2022_q1$Quarter<- "2022 Q1"
+df_matched_2022_q1$Price_Period <- "1"
+df_matched_2022_q2$Quarter<- "2022 Q2"
+df_matched_2022_q2$Price_Period <- "1"
+df_matched_2022_q3$Quarter<- "2022 Q3"
+df_matched_2022_q3$Price_Period <- "1"
+df_matched_2022_q4$Quarter<- "2022 Q4"
+df_matched_2022_q4$Price_Period <- "1"
+
+df_matched_2023_q1$Quarter<- "2023 Q1"
+df_matched_2023_q1$Price_Period <- "2"
+df_matched_2023_q2$Quarter<- "2023 Q2"
+df_matched_2023_q2$Price_Period <- "2"
+df_matched_2023_q3$Quarter<- "2023 Q3"
+df_matched_2023_q3$Price_Period <- "2"
+df_matched_2023_q4$Quarter<- "2023 Q4"
+df_matched_2023_q4$Price_Period <- "2"
+df_matched_2024_q1$Quarter<- "2024 Q1"
+df_matched_2024_q1$Price_Period <- "2"
+df_matched_2024_q2$Quarter<- "2024 Q1"
+df_matched_2024_q2$Price_Period <- "2"
+
+df_matched_2024_q3$Quarter<- "2024 Q3"
+df_matched_2024_q3$Price_Period <- "3"
+
+data_list2 <- list(df_matched_2021_q3, df_matched_2021_q4,
+               df_matched_2022_q1, df_matched_2022_q2,
+               df_matched_2022_q3, df_matched_2022_q4,
+               df_matched_2023_q1, df_matched_2023_q2,
+               df_matched_2023_q3, df_matched_2023_q4,
+               df_matched_2024_q1, df_matched_2024_q2,
+               df_matched_2024_q3)
+
+for (i in seq_along(data_list2)) {
+  df <- data_list2[[i]]
+  df <- subset(df, select = c(Segment.Name, Percentage.of.Matched.Trips,
+                              Count.of.Matched.Trips, Quarter,
+                              Price_Period))
+  df$Count.of.Matched.Trips <- gsub(",", "", df$Count.of.Matched.Trips)
+  df$Count.of.Matched.Trips <- gsub("< 100", "50", 
+                                    df$Count.of.Matched.Trips)
+  df$Count.of.Matched.Trips <- as.numeric(df$Count.of.Matched.Trips)
+  df <- na.omit(df)
+  
+  df <- df %>%
+    group_by(Segment.Name, Quarter, Price_Period) %>%
+    summarize(
+      Total_Matched_Trips = sum(Count.of.Matched.Trips),
+      Weighted_Average_Percentage = sum(Count.of.Matched.Trips *
+                                          Percentage.of.Matched.Trips) /
+        sum(Count.of.Matched.Trips)
+      ) %>% 
+    ungroup()
+  df <- rename(df, Segment_Name = Segment.Name)
+  data_list2[[i]] <- df
+}
+a <- data_list2[[1]]
+b <- data_list2[[2]]
+c <- data_list2[[3]]
+d <- data_list2[[4]]
+e <- data_list2[[5]]
+f <- data_list2[[6]]
+g <- data_list2[[7]]
+h <- data_list2[[8]]
+i <- data_list2[[9]]
+j <- data_list2[[10]]
+k <- data_list2[[11]]
+l <- data_list2[[12]]
+m <- data_list2[[13]]
+
+test_df <- rbind(a, b, c, d, e, f, g, h, i, j, k, l, m)
+test_df <- test_df %>% 
+  filter(!is.na(Segment_Name) & Segment_Name != "")
+head(test_df)
+```
+
+```{r}
+splice_plot <- ggplot(data = df_matched_trips, aes(x = as.numeric(as.factor(Price_Period)), y = Normalized_Weighted_Avg_Percentage)) +
+  geom_point() +
+  geom_smooth(method = "lm", formula = y ~ ns(x, df = 3), se = FALSE) +  
+  # geom_vline(xintercept = c(2, 3), linetype = "dashed", color = "red") +  
+  # annotate("text", x = 2, y = max(combined_data$Normalized_Weighted_Avg_Percentage) * 0.95, label = "Price Change 1", color = "red", angle = 90, vjust = 1) +  
+  # annotate("text", x = 3, y = max(combined_data$Normalized_Weighted_Avg_Percentage) * 0.95, label = "Price Change 2", color = "red", angle = 90, vjust = 1) +
+  theme_light() +
+  labs(
+    title = "Returning Users with Price Changes Highlighted",
+    x = "Quarter",
+    y = "Normalized Percentage of Returning Users",
+    color = "Street Segment"
+  )
+plot(splice_plot)
+```
+
+
 
