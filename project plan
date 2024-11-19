@@ -1,0 +1,19 @@
+Potentially layout of presentation
+- Intro of problem and data
+-- Contacting SPIN
+
+- Basic data analysis (small observations)
+-- Area maps
+-- Seasonality and trends
+
+- Questions:
+-- Positive vs negative trend in ridership?
+-- What factors contribute to ridership over time? (price, location, number of students on campus)
+
+- Predictions:
+-- Price: Talk about price changes vs ridership, how it affects members/loyalty; what would have happened if they hadn't lowered college price?
+-- Location: KNN of densities (deployment and start density)
+-- Forecasting with linear regression/ARIMA models
+
+- Conclusion:
+-- Summary
