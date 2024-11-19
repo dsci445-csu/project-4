@@ -1,0 +1,296 @@
+---
+title: "all_jamovi_code"
+author: "Grace Combe"
+date: "2024-11-19"
+output: pdf_document
+---
+```{r}
+library(scatr)
+library(jmv)
+library(tidyverse)
+```
+
+
+```{r}
+data <- read.csv("FOCO Spin Data/combined_spin_data.csv")
+```
+
+```{r}
+data <- data %>% rename("Scooter Trips" = "Scooter.Trips", "Bike Trips" = "Bike.Trips")
+```
+
+```{r}
+data$'Year-Month' <- paste(data$Year, data$Month, sep = "-")
+```
+
+```{r}
+scatr::scat(
+    data = data,
+    x = Scooter Trips,
+    y = Bike Trips,
+    line = "smooth")
+```
+```{r}
+jmv::descriptives(
+    formula = `Scooter Trips` ~ Month:Year,
+    data = data,
+    freq = TRUE,
+    bar = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::descriptives(
+    formula = `Bike Trips` ~ Month:Year,
+    data = data,
+    bar = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = Scooter Trips,
+    covs = vars(Bike Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Bike Trips",
+            "Month",
+            "Normal Price",
+            "College Price")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = LN(Scooter Trips),
+    covs = vars(Bike Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Month",
+            "Bike Trips",
+            "Normal Price",
+            "College Price")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = Scooter Trips,
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = LN(Scooter Trips),
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = SQRT(Scooter Trips),
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = SQRT(Scooter Trips),
+    covs = vars(Bike Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Bike Trips",
+            "Normal Price",
+            "College Price",
+            "Month")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+**Bikes**
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = Bike Trips,
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = Bike Trips,
+    covs = vars(Scooter Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Scooter Trips",
+            "Normal Price",
+            "College Price",
+            "Month")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = LN(Bike Trips),
+    covs = vars(Scooter Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Scooter Trips",
+            "Normal Price",
+            "College Price",
+            "Month")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = LN(Bike Trips),
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::descriptives(
+    data = data,
+    vars = SQRT(Bike Trips),
+    hist = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+
+```{r}
+jmv::linReg(
+    data = data,
+    dep = SQRT(Bike Trips),
+    covs = vars(Scooter Trips, Normal Price, College Price),
+    factors = Month,
+    blocks = list(
+        list(
+            "Scooter Trips",
+            "Normal Price",
+            "College Price",
+            "Month")),
+    refLevels = list(
+        list(
+            var="Month",
+            ref="1")),
+    qqPlot = TRUE,
+    resPlots = TRUE)
+```
+
+```{r}
+jmv::descriptives(
+    formula = `Scooter Trips` ~ `Year-Month`:Year,
+    data = data,
+    bar = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+*this does not match jamovi?
+
+```{r}
+jmv::descriptives(
+    formula = `Bike Trips` ~ `Year-Month`:Year,
+    data = data,
+    bar = TRUE,
+    n = FALSE,
+    missing = FALSE,
+    mean = FALSE,
+    median = FALSE,
+    sd = FALSE,
+    min = FALSE,
+    max = FALSE)
+```
+*this does not match jamovi?
+
+
+
