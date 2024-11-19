@@ -275,7 +275,7 @@ jmv::descriptives(
     min = FALSE,
     max = FALSE)
 ```
-*this does not match jamovi?
+*this does not match jamovi? i don't think it's in the correct order
 
 ```{r}
 jmv::descriptives(
