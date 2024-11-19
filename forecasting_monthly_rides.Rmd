@@ -47,11 +47,28 @@ daily_scooters$year <- year(daily_scooters$Date)
 #week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
 month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
 ```
+```{r}
+eda_month <- month_data
+eda_month$YearMonth <- paste(month_data$year, month_data$month, sep = "-")
+eda_month$YearMonth <- sub("-(\\d)$", "-0\\1", eda_month$YearMonth)
+```
+
+```{r}
+eda_month$date_str <- paste0(eda_month$YearMonth, "-01")
+eda_month$Date <- as.Date(eda_month$date_str, format = "%Y-%m-%d")
+```
 
 **Exploratory**
 ```{r}
 #figure out how to connect dots?
 ggplot(data = month_data, aes(x = month, y = MonthlyRides, color = as.factor(year))) +geom_point()
+```
+
+```{r}
+ggplot(data = eda_month, aes(x = Date, y = MonthlyRides, fill = as.factor(year))) +
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = "Date", y = "MonthlyRides", title = "Monthly Rides")
 ```
 
 **MONTHLY DATA**
