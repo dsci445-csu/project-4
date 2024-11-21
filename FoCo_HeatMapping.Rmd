@@ -22,10 +22,9 @@ library(here)
 a)  Load the starting and ending latitude and longitude coordinates into respective data-frames. 
 
 ```{r}
-data_dir <- 'FOCO Spin Data'
-start_scoot <- data.frame(read.csv(file.path(data_dir,'fort-collins-curb-events-2021-07-26-2024-10-15-trip_starts.csv')))
-end_scoot <- data.frame(read.csv(file.path(data_dir,'fort-collins-curb-events-2021-07-26-2024-10-15-trip_ends.csv')))
-dpl_scoot <- data.frame(read.csv(file.path(data_dir,'fort-collins-curb-events-2021-07-26-2024-10-15-deployments.csv')))
+start_scoot <- read.csv("FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_starts.csv")
+end_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_ends.csv')
+dpl_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-deployments.csv')
 
 
 head(start_scoot)
