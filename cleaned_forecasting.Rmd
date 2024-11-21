@@ -1,0 +1,267 @@
+---
+title: "cleaned_forecasting"
+author: "Grace Combe"
+date: "2024-11-21"
+output: pdf_document
+---
+
+**GOAL: forecast scooter usage by month and week**
+```{r}
+# setting seed
+set.seed(227)
+```
+
+```{r}
+# load packages
+library(tidyverse)
+library(tidymodels)
+library(readr)
+library(ggplot2)
+library(forecast)
+library(forecastHybrid)
+library(fpp2)
+library(TTR)
+library(dplyr)
+library(lubridate)
+library(plotly)
+library(rio)
+library(tseries)
+library(zoo)
+library(keras)
+library(tensorflow)
+```
+
+```{r}
+# load data
+daily_scooters <- read.csv("FOCO Spin Data/scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")
+daily_scooters <- daily_scooters %>% rename("TripsByDate" = Trips.By.Date...Starts...Spin...Scooters)
+
+daily_scooters$Date <- ymd(daily_scooters$Date)
+daily_scooters$month <- month(daily_scooters$Date)
+daily_scooters$year <- year(daily_scooters$Date)
+daily_scooters$WeekNum <- isoweek(ymd(daily_scooters$Date))
+
+# week data
+week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
+
+# month data
+month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
+```
+
+```{r}
+# mean absolute percentage error to measure accuracy
+mape <- function(actual, pred){
+mape <- mean(abs((actual-pred)/actual))*100
+return(mape)
+}
+```
+
+**WEEKLY DATA**
+```{r}
+# make price variable
+for (i in 1:nrow(week_data)) {
+  week_data$CollegePrice[i] <- ifelse(i <= 71, 0.30, 
+                                      ifelse(i <= 154, 0.4, 0.3))
+  week_data$NormalPrice[i] <- ifelse(i <= 71, 0.30, 0.40)
+}
+```
+
+```{r}
+# splitting into train/test; test is data from 2024
+week_data$Class <- if_else(week_data$year == 2024, 'Test', 'Train')
+train <- subset(week_data, Class == 'Train') %>% arrange(year, WeekNum)
+test <- subset(week_data, Class == 'Test') %>% arrange(year, WeekNum)
+nrow(train)
+nrow(test)
+```
+
+```{r}
+# time series
+ts <- ts(train$WeeklyRides, start = c(2021, 30), frequency = 52)
+summary(ts)
+plot(ts)
+```
+
+**STLF**
+```{r}
+stlf_forecast <- stlf(ts, h = 52)
+plot(stlf_forecast)
+```
+
+```{r}
+df_stlf <- as.data.frame(stlf_forecast)
+test$stlf = df_stlf$`Point Forecast`[1:42]
+mape(test$WeeklyRides, test$stlf)
+```
+47.12 mape on test data
+
+**Graphing STLF**
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = stlf, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("STLF Weekly Rides 2024") +
+  geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+**ARIMA/STLM/THETAM**
+```{r}
+# ARIMA, STLM, THETAM
+mod_afs <- hybridModel(ts, models = "afs")
+afs_fore <- forecast(mod_afs, h = 52)
+plot(afs_fore)
+```
+
+```{r}
+df_afs <- as.data.frame(afs_fore)
+test$afs = df_afs$`Point Forecast`[1:42]
+mape(test$WeeklyRides, test$afs)
+```
+29.69 mape on test data
+
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = afs, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("AFS WeeklyRides 2024") +
+  geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+**one model for pre-price change, one model for after**
+```{r}
+for (i in 1:nrow(test)){
+  test$CombinedPred[i] <- ifelse(test$WeekNum[i] < 27, test$afs[i], test$stlf[i])
+}
+```
+
+```{r}
+mape(test$WeeklyRides, test$CombinedPred)
+```
+29.04 on test data
+
+```{r}
+plot <- ggplot(test, aes(WeekNum)) +
+  geom_line(aes(y = CombinedPred, color = "Forecast")) +
+  geom_line(aes(y = WeeklyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("CombinedPred WeeklyRides 2024") +
+  geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+
+**MONTHLY DATA**
+```{r}
+for (i in 1:nrow(month_data)) {
+  month_data$CollegePrice[i] <- ifelse(i <= 17, 0.30, 
+                                      ifelse(i <= 36, 0.4, 0.3))
+  month_data$NormalPrice[i] <- ifelse(i <= 14, 0.30, 0.40)
+}
+```
+
+```{r}
+# splitting into train/test; test is data from 2024
+month_data$Class <- if_else(month_data$year == 2024, 'Test', 'Train')
+train <- subset(month_data, Class == 'Train') %>% arrange(year, month)
+test <- subset(month_data, Class == 'Test') %>% arrange(year, month)
+nrow(train)
+nrow(test)
+```
+
+```{r}
+# time series
+ts <- ts(train$MonthlyRides, start = c(2021, 7), frequency = 12)
+summary(ts)
+plot(ts)
+```
+
+**EDA**
+```{r}
+eda_month <- month_data
+eda_month$YearMonth <- paste(month_data$year, month_data$month, sep = "-")
+eda_month$YearMonth <- sub("-(\\d)$", "-0\\1", eda_month$YearMonth)
+```
+
+```{r}
+eda_month$date_str <- paste0(eda_month$YearMonth, "-01")
+eda_month$Date <- as.Date(eda_month$date_str, format = "%Y-%m-%d")
+```
+
+**Hybrid**
+```{r}
+mod1 <- hybridModel(ts)
+mod1_forecast <- forecast(mod1, h = 12)
+plot(mod1_forecast)
+```
+
+```{r}
+df_hybrid <- as.data.frame(mod1_forecast)
+test$hybrid = df_hybrid$`Point Forecast`[1:10]
+mape(test$MonthlyRides, test$hybrid)
+```
+14.39 mape on test
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = hybrid, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Hybrid Mod1 Monthly Rides 2024") +
+  geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+**Boosting**
+```{r}
+boost_spec <- boost_tree(trees = 5000, tree_depth = 5, learn_rate = 0.1) %>% #0.1 about the same as 0.01
+  set_engine("xgboost") %>% 
+  set_mode("regression")
+
+boost_fit <- boost_spec %>% 
+  fit(MonthlyRides ~ as.factor(month) + CollegePrice + NormalPrice, data = train)
+
+boost_pred <- predict(boost_fit, new_data = test)
+
+test$boosting <- boost_pred$.pred
+```
+
+```{r}
+mape(test$MonthlyRides, test$boosting)
+```
+29.39 mape on test data
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = boosting, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("Boosting MonthlyRides 2024") +
+  geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
+
+**one model for pre-price change, one model for after**
+```{r}
+for (i in 1:nrow(test)){
+  test$CombinedPred[i] <- ifelse(i < 7, test$hybrid[i], test$boosting[i])
+}
+```
+
+```{r}
+mape(test$MonthlyRides, test$CombinedPred)
+```
+8.86 on test
+
+```{r}
+plot <- ggplot(test, aes(month)) +
+  geom_line(aes(y = CombinedPred, color = "Forecast")) +
+  geom_line(aes(y = MonthlyRides, color = "Actual"))+
+  scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
+  ggtitle("CombinedPred MonthlyRides 2024") +
+  geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
+ggplotly(plot)
+```
