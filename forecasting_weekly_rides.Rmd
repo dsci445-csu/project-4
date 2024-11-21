@@ -188,7 +188,6 @@ Gets the spike pretty well, best so far
 
 **Hybrid Models**
 ```{r}
-library(forecastHybrid)
 mod1 <- hybridModel(ts)
 mod1_forecast <- forecast(mod1, h = 52)
 plot(mod1_forecast)
