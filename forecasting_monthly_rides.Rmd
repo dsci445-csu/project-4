@@ -47,6 +47,7 @@ daily_scooters$year <- year(daily_scooters$Date)
 #week_data <- daily_scooters %>% group_by(WeekNum, year) %>% summarize(WeeklyRides = sum(TripsByDate)) %>% arrange(year, WeekNum)
 month_data <- daily_scooters %>% group_by(month, year) %>% summarize(MonthlyRides = sum(TripsByDate)) %>% arrange(year, month)
 ```
+
 ```{r}
 eda_month <- month_data
 eda_month$YearMonth <- paste(month_data$year, month_data$month, sep = "-")

@@ -274,7 +274,7 @@ df_afs <- as.data.frame(afs_fore)
 test$afs = df_afs$`Point Forecast`[1:42]
 mape(test$WeeklyRides, test$afs)
 ```
-29.69 mape on test
+29.69 mape on test data
 
 ```{r}
 plot <- ggplot(test, aes(WeekNum)) +
