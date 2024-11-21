@@ -9,6 +9,10 @@ output: pdf_document
 ```{r}
 # setting seed
 set.seed(227)
+
+
+
+
 ```
 
 ```{r}
