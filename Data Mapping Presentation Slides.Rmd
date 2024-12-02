@@ -24,6 +24,7 @@ library(fields)
 library(MASS)
 library(dbscan)
 library(here)
+library(kknn)
 
 # Set seed for reproducibility
 set.seed(445)
