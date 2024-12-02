@@ -17,6 +17,10 @@ library(dbscan)
 library(here)
 ```
 
+```{r}
+set.seed(445)
+```
+
 1. Explore the data.
 
 a)  Load the starting and ending latitude and longitude coordinates into respective data-frames. 
@@ -121,16 +125,22 @@ end_map <- foco_coord_map + stat_density2d(data= end_scoot,  aes(x=longitude, y=
 ```
 
 ```{r}
+deployment_points <- foco_coord_map + geom_point(data = clean_dpl_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
+  
 deployment_map <- foco_coord_map + stat_density2d(data = clean_dpl_scoot,  aes(x = longitude, y = latitude, fill = after_stat(level)), geom = "polygon", contour = TRUE, bins = 750,h = c(0.012, 0.012)) +
   scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Deployment\nDensity') + 
   theme(panel.grid = element_blank()) + 
   ggtitle("Scooter Deployment Density")
+
+deployment_points + deployment_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 
 ```{r}
 #deployment vs. start heatmap
 deployment_map + start_dens_heatmap  + 
     plot_layout(ncol = 2, guides = 'collect')
+
+deployment_points + start_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 d) this map provides a basic layout of fort collins. perhaps there is a way to enhance the mapping of our data a little more. (outline key features, form boundaries, draw lines at major roads, etc.)
 

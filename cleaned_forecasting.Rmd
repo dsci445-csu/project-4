@@ -9,10 +9,6 @@ output: pdf_document
 ```{r}
 # setting seed
 set.seed(227)
-
-
-
-
 ```
 
 ```{r}
@@ -88,7 +84,7 @@ plot(ts)
 
 **STLF**
 ```{r}
-stlf_forecast <- stlf(ts, h = 52)
+stlf_forecast <- stlf(ts, h = 104)
 plot(stlf_forecast)
 ```
 
@@ -156,6 +152,33 @@ plot <- ggplot(test, aes(WeekNum)) +
   geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
 ggplotly(plot)
 ```
+
+**Plotting through 2025**
+```{r}
+for(i in 1:nrow(df_stlf)) {
+  df_stlf$forecastDate[i] <- ifelse(i <= 52, paste("2024", i, sep = "-"), paste("2025", i - 52, sep = "-"))
+}
+```
+
+```{r}
+df_stlf <- df_stlf %>%
+  separate(forecastDate, into = c("Year", "Week"), sep = "-") %>%
+  mutate(
+    Year = as.integer(Year),
+    Week = as.integer(Week),
+    # Convert Year and Week to a Date (using ISO 8601 format, where Monday is the first day of the week)
+    forecastDate = as.Date(paste(Year, Week, 1, sep = "-"), format = "%Y-%U-%u")
+  )
+```
+
+```{r}
+plot <- ggplot(data = df_stlf[43:nrow(df_stlf), ]) +
+  geom_line(aes(x = forecastDate, y = `Point Forecast`)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  ggtitle("Forecasting Weekly Rides Through 2025")
+ggplotly(plot)
+```
+
 
 
 **MONTHLY DATA**
@@ -269,3 +292,41 @@ plot <- ggplot(test, aes(month)) +
   geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
 ggplotly(plot)
 ```
+
+**Plotting through 2025**
+```{r}
+boost_test_df <- data.frame(Month = c(1:24))
+
+for(i in 1:nrow(boost_test_df)) {
+  boost_test_df$forecastDate[i] <- ifelse(i <= 12, paste("2024", i, sep = "-"), paste("2025", i - 12, sep = "-"))
+  boost_test_df$CollegePrice[i] <- 0.30
+  boost_test_df$NormalPrice[i] <- 0.40
+  boost_test_df$month[i] <- ifelse(i <= 12, i, i-12)
+}
+```
+
+```{r}
+boost_pred <- predict(boost_fit, new_data = boost_test_df)
+boost_test_df$pred <- boost_pred$.pred
+```
+
+```{r}
+boost_test_df$forecastDate <- sub("-(\\d)$", "-0\\1", boost_test_df$forecastDate)
+```
+
+```{r}
+boost_test_df$forecastDate_str <- paste0(boost_test_df$forecastDate, "-01")
+boost_test_df$forecastDate <- as.Date(boost_test_df$forecastDate_str, format = "%Y-%m-%d")
+```
+```{r}
+boost_test_df <- boost_test_df %>% arrange(forecastDate)
+```
+
+```{r}
+plot <- ggplot(aes(x = forecastDate, y = pred), data = boost_test_df[11:nrow(boost_test_df), ]) +
+  geom_line() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  ggtitle("Forecasting Monthly Rides Through 2025")
+ggplotly(plot)
+```
+
