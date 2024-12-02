@@ -31,8 +31,12 @@ set.seed(445)
 
 ## Data Preparation
 
+# SPIN provided spatial data files labeled 'Curb Events': {Deployment, Start, End}
+# Raw spatial data (no non-spatial data columns)
+
+
 ```{r load-data, include= FALSE}
-#load datasets
+#load data sets
 start_scoot <- read.csv("FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_starts.csv")
 end_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_ends.csv')
 dpl_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-deployments.csv')
@@ -84,10 +88,10 @@ foco_coord_map
 
 ```{r start-maps, echo = FALSE}
 #raw start points
-start_map <- foco_coord_map + geom_point(data = clean_start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
+start_map <- foco_coord_map + geom_point(data = clean_start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank()) + ggtitle('start points')
 
 #density heatmap
-start_dens_heatmap <- foco_coord_map + stat_density2d(data= clean_start_scoot,  aes(x=longitude, y=latitude, fill= after_stat(level)), geom="polygon", contour = TRUE, bins = 500, h = c(0.012, 0.012)) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Density') + theme(panel.grid = element_blank())
+start_dens_heatmap <- foco_coord_map + stat_density2d(data= clean_start_scoot,  aes(x=longitude, y=latitude, fill= after_stat(level)), geom="polygon", contour = TRUE, bins = 500, h = c(0.012, 0.012)) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Density') + theme(panel.grid = element_blank()) + ggtitle("Scooter Start Density")
 
 #side by side maps
 start_dens_heatmap + start_map + plot_layout(ncol = 2, guides = 'collect')
@@ -225,7 +229,7 @@ deployment_knn_map <- foco_coord_map +
 
 ```
 
-## Start KNN Map
+## Deployment & Start KNN Maps
 ```{r KNN-start-map, echo=FALSE}
 start_predictions <- grid_pts |>
   mutate(density = start_pred$.pred)
