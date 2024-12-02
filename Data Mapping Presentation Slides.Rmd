@@ -138,7 +138,7 @@ dpl_dens <- clean_dpl_scoot |>
 dpl_knn_recipe <- recipe(density_score ~ longitude + latitude, data = dpl_dens)
 
 #c-fold cross validation
-cv_folds <- vfold_cv(dpl_dens, v=5)
+cv_folds <- vfold_cv(dpl_dens, v=20)
 
 #knn workflow
 dpl_knn_res <- workflow() |>
@@ -178,7 +178,7 @@ start_dens <- clean_start_scoot |>
 start_knn_recipe <- recipe(density_score ~ longitude + latitude, data = start_dens)
 
 #c-fold cross validation
-cv_folds <- vfold_cv(start_dens, v=5)
+cv_folds <- vfold_cv(start_dens, v=20)
 
 #knn workflow
 start_knn_res <- workflow() |>
