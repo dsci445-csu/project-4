@@ -31,8 +31,12 @@ set.seed(445)
 
 ## Data Preparation
 
-```{r load-data, include= False}
-#load datasets
+# SPIN provided spatial data files labeled 'Curb Events': {Deployment, Start, End}
+# Raw spatial data (no non-spatial data columns)
+
+
+```{r load-data, include= FALSE}
+#load data sets
 start_scoot <- read.csv("FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_starts.csv")
 end_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-trip_ends.csv')
 dpl_scoot <- read.csv('FOCO Spin Data/fort-collins-curb-events-2021-07-26-2024-10-15-deployments.csv')
@@ -82,19 +86,19 @@ foco_coord_map
 
 ## Trip Start Analysis
 
-```{r start-maps}
+```{r start-maps, echo = FALSE}
 #raw start points
-start_map <- foco_coord_map + geom_point(data = clean_start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
+start_map <- foco_coord_map + geom_point(data = clean_start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank()) + ggtitle('start points')
 
 #density heatmap
-start_dens_heatmap <- foco_coord_map + stat_density2d(data= clean_start_scoot,  aes(x=longitude, y=latitude, fill= after_stat(level)), geom="polygon", contour = TRUE, bins = 500, h = c(0.012, 0.012)) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Density') + theme(panel.grid = element_blank())
+start_dens_heatmap <- foco_coord_map + stat_density2d(data= clean_start_scoot,  aes(x=longitude, y=latitude, fill= after_stat(level)), geom="polygon", contour = TRUE, bins = 500, h = c(0.012, 0.012)) + scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Density') + theme(panel.grid = element_blank()) + ggtitle("Scooter Start Density")
 
 #side by side maps
 start_dens_heatmap + start_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 ## Trip Deployment Analysis
 
-```{r}
+```{r dpl maps, echo = FALSE}
 deployment_points <- foco_coord_map + geom_point(data = clean_dpl_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
   
 deployment_map <- foco_coord_map + stat_density2d(data = clean_dpl_scoot,  aes(x = longitude, y = latitude, fill = after_stat(level)), geom = "polygon", contour = TRUE, bins = 750,h = c(0.012, 0.012)) +
@@ -107,14 +111,14 @@ deployment_points + deployment_map + plot_layout(ncol = 2, guides = 'collect')
 
 ## Raw Start Data Points vs Density {.flexbox .vcenter}
 
-```{r}
+```{r dpl-&-start, echo = FALSE}
 deployment_map + start_dens_heatmap  + 
     plot_layout(ncol = 2, guides = 'collect')
 ```
 
 ## KNN Model Analysis {.flexbox .vcenter}
 
-```{r Knn-Models}
+```{r Knn-Models, echo=FALSE}
 #set a knn model to compare deployment to start locations to validate that deployments start where they need to.
 dpl_knn_model <- nearest_neighbor(neighbors = tune(), weight_func = tune()) |>
   set_engine('kknn') |>
@@ -154,7 +158,7 @@ dpl_knn_final_fit <- workflow() |>
 dpl_knn_final_fit
 ```
 
-```{r}
+```{r, echo=FALSE}
 #set a knn model to compare deployment to start locations to validate that deployments start where they need to.
 start_knn_model <- nearest_neighbor(neighbors = tune(), weight_func = tune()) |>
   set_engine('kknn') |>
@@ -195,7 +199,7 @@ start_knn_final_fit
 ```
 
 ## KNN Predictions
-```{r}
+```{r pred, include=FALSE}
 #comparing model predictions
 grid_pts <- expand.grid(longitude = seq(foco_map_bounds['left'], foco_map_bounds['right'], by = 0.001), latitude = seq(foco_map_bounds['bottom'], foco_map_bounds['top'], by = 0.001))
 
@@ -204,7 +208,7 @@ start_pred <- predict(start_knn_final_fit, grid_pts)
 ```
 
 ## Deployment KNN Map
-```{r KNN-dpl-map}
+```{r KNN-dpl-map, echo = FALSE}
 
 deployment_predictions <- grid_pts |>
   mutate(density = dpl_pred$.pred)
@@ -225,8 +229,8 @@ deployment_knn_map <- foco_coord_map +
 
 ```
 
-## Start KNN Map
-```{r KNN-start-map}
+## Deployment & Start KNN Maps
+```{r KNN-start-map, echo=FALSE}
 start_predictions <- grid_pts |>
   mutate(density = start_pred$.pred)
 
@@ -245,12 +249,12 @@ start_knn_map <- foco_coord_map +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
 ```
-```{r KNN Density - & - Start}
+```{r KNN Density - & - Start, echo = FALSE}
 deployment_knn_map + start_knn_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 
 ## Optimization Map (Deployment vs. Start)
-```{r optimization - map}
+```{r optimization - map, echo = FALSE}
 
 
 comparison <- grid_pts |>
@@ -259,4 +263,8 @@ comparison <- grid_pts |>
          difference = start_density - dpl_density)
 
 foco_coord_map + geom_tile(data = comparison, aes(x=longitude, y = latitude, fill = difference), alpha = .8) + scale_fill_gradient2(low='red',mid='white', high='green', name = 'Deployment vs\nStart Density') + coord_fixed() + theme_minimal()
+```
+
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+#Appendix
 ```
