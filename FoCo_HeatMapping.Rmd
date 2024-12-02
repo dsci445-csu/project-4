@@ -17,6 +17,10 @@ library(dbscan)
 library(here)
 ```
 
+```{r}
+set.seed(445)
+```
+
 1. Explore the data.
 
 a)  Load the starting and ending latitude and longitude coordinates into respective data-frames. 
