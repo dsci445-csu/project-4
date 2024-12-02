@@ -30,10 +30,18 @@ library(kknn)
 set.seed(445)
 ```
 
-## Data Preparation
+## Spatial Analysis of Scooter Data Deployment/Start Locations
 
-# SPIN provided spatial data files labeled 'Curb Events': {Deployment, Start, End}
-# Raw spatial data (no non-spatial data columns)
+Here we are exploring the geological start and end locations for the spin cycle datasets provided for our research project. The goals for this portion of the project are:
+
+1.	Explore and observe density patterns for Start & Deployment curb events.
+
+2.	Use latitude and longitude data to develop a heat map for spin scooter start and end location.
+
+3.	Build predictive models with KNN regression to predict Deployment & Start Locations.
+
+4.	Compare predictive model results on a prediction grid across Fort Collins to identify mismatches between deployment and start locations.
+
 
 
 ```{r load-data, include= FALSE}
@@ -79,13 +87,18 @@ clean_dpl_scoot <- dpl_scoot |>
   )
 ```
 
-## Base Map Visualization {.flexbox .vcenter}
+## Data & Map Preparation {.flexbox .vcenter}
+
+	SPIN provided our group with three separate “curb event” files containing geographic coordinates for the deployment, start, and end locations for spin scooters across Fort Collins. The rows included purely spatial data (latitude, longitude) that were unconnected to each other file-wise, as-in there was no way to tell which scooter starts at the pinged location. The data also included miscalculations like missing negatives that created large outliers in the data where certain scooters reported their start in places like Shanghai. 
+	
+	Utilizing the Stadia Maps API we defined a map boundary and filtered the data through this boundary to only include data points that were located within SPIN’s service area in Fort Collins. We used this boundary to create a simple base-map of Fort Collins for density plotting. 
+
 
 ```{r base-map}
 foco_coord_map
 ```
 
-## Trip Start Analysis
+
 
 ```{r start-maps, echo = FALSE}
 #raw start points
@@ -97,7 +110,7 @@ start_dens_heatmap <- foco_coord_map + stat_density2d(data= clean_start_scoot,  
 #side by side maps
 start_dens_heatmap + start_map + plot_layout(ncol = 2, guides = 'collect')
 ```
-## Trip Deployment Analysis
+
 
 ```{r dpl maps, echo = FALSE}
 deployment_points <- foco_coord_map + geom_point(data = clean_dpl_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
@@ -110,14 +123,26 @@ deployment_map <- foco_coord_map + stat_density2d(data = clean_dpl_scoot,  aes(x
 deployment_points + deployment_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 
-## Raw Start Data Points vs Density {.flexbox .vcenter}
+## Raw Trip Start Data Points vs Density {.flexbox .vcenter}
+
+
+	Trip densities for Deployment densities are distributed gradually across the cities with more clustered hotspots more concentrated around the CSU campus and Oldtown areas. Start densities show similar patterns, but general densities are centered closer to the central town areas.
 
 ```{r dpl-&-start, echo = FALSE}
 deployment_map + start_dens_heatmap  + 
     plot_layout(ncol = 2, guides = 'collect')
 ```
+## KNN Model Predictions
+
+KNN Model Predictions
+	We wanted to explore if SPIN’s gradual deployment patterns were optimally addressing the trending demand patterns of scooter rides in Fort Collins. We use a KNN regression model to predict the patterns of Scooter Deployment locations and an identical model fitted to predict the patterns of Start locations. 
+	
+  We map the data and compare the density score of the predicted results on a prediction grid of Fort Collins to determine if deployments are being distributed in an optimized matter. The model should help us determine if there are too many scooters being deployed in an area, and find areas where scooters are not being deployed enough to fit scooter demand.
+
 
 ## KNN Model Analysis {.flexbox .vcenter}
+
+  We used a 20-fold cross validation to essentially divide Fort Collins into 20 grid squared to compare our predictions. 20 was chosen as a tradeoff between complexity and accuracy. Both models selected an epanechnikov kernel and best k = 15. The deployment KNN model reported a means squared error of 0.04891901 and the start KNN model reported a means squared error of 0. 04380498.
 
 ```{r Knn-Models, echo=FALSE}
 #set a knn model to compare deployment to start locations to validate that deployments start where they need to.
@@ -200,6 +225,9 @@ start_knn_final_fit
 ```
 
 ## KNN Predictions
+
+Compared side by side, the two models bear a strong resemblance to each other with the deployment model showing a more gradual gradient compared to the start model. This matches with the observations when comparing the raw data. There are notable edge effects in areas where the model is predicting past the SPIN service area in Fort Collins.
+
 ```{r pred, include=FALSE}
 #comparing model predictions
 grid_pts <- expand.grid(longitude = seq(foco_map_bounds['left'], foco_map_bounds['right'], by = 0.001), latitude = seq(foco_map_bounds['bottom'], foco_map_bounds['top'], by = 0.001))
@@ -255,6 +283,13 @@ deployment_knn_map + start_knn_map + plot_layout(ncol = 2, guides = 'collect')
 ```
 
 ## Optimization Map (Deployment vs. Start)
+
+  To make comparisons of the model predictions from our KNN regression to create a mesh of points across the map of Fort Collins. The deployment model predicts what deployment density should be at that location, and the start model predicts what the usage density should be. These represent the “expected” levels of deployment vs. usage, smoothed out to account for day – to – day variations. 
+	We use our two models to make predictions at each point in the grid and subtract these predictions from each other. The difference of deployment density and start density at each point determines the “density score” for each area to determine whether deployment matches usage patterns in an area. Positive differences (shown in Green) indicate areas where people are starting more rides than the deployment model would predict – suggesting this area might need an extra scooter or two deployed. Negative differences (shown in red) indicate areas where the model suggests SPIN is deploying more scooters than necessary according to the patterns in that area. 
+	This map highlights where SPIN can improve their deployment strategies. Smooth transitions between colors on the map represent gradual changes in the relationship between deployment and usage patterns, which helps understand not only which areas to make changes, but just how significant those changes should be.
+	The model is less effective reaching toward the outer bounds of the service area in the data. As it reaches the outer bounds an edge effect takes hold and spreads the last noticed pattern past the service area of the data into spaces where no scooters are used. 
+
+
 ```{r optimization - map, echo = FALSE}
 
 
