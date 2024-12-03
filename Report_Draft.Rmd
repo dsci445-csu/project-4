@@ -8,9 +8,16 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Introduction
+
+While pondering a topic, we discovered that our group shared a mutual distaste for pay to ride E-Scooters and how seemingly popular 
 
 ## Abstract
 
+Fort Collins is widely considered one of most commuter friendly cities. As the push for Eco-friendly transportation methods rise, local E-Scooter/Bike companies like SPIN, are starting to become more widely available. This report aims to use statistical machine learning methods - Autoregressive integrated moving average (ARIMA), K Nearest Neighbors (KNN), Seasonal-Trend Decomposition (STLM), Boosting, etc... - and spatial geographical data to understand and forecast the longevity of ridership.
+
 ## Methods
+
+
 
 ## Results
