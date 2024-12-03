@@ -94,7 +94,7 @@ clean_dpl_scoot <- dpl_scoot |>
 
 
 
-2. can we generate a heatmap for our data?
+2. generate a heatmap for start and deployment data
 
 ```{r}
 start_map <- foco_coord_map + geom_point(data = clean_start_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
@@ -166,7 +166,7 @@ dpl_dens <- clean_dpl_scoot |>
 dpl_knn_recipe <- recipe(density_score ~ longitude + latitude, data = dpl_dens)
 
 #c-fold cross validation
-cv_folds <- vfold_cv(dpl_dens, v=5)
+cv_folds <- vfold_cv(dpl_dens, v=20)
 
 #knn workflow
 dpl_knn_res <- workflow() |>
@@ -224,7 +224,7 @@ start_dens <- clean_start_scoot |>
 start_knn_recipe <- recipe(density_score ~ longitude + latitude, data = start_dens)
 
 #c-fold cross validation
-cv_folds <- vfold_cv(start_dens, v=5)
+cv_folds <- vfold_cv(start_dens, v=20)
 
 #knn workflow
 start_knn_res <- workflow() |>
@@ -275,58 +275,6 @@ The scope of this model stretches across the city of Fort Collins. This can prov
     
 We can create smaller maps and confine the model results to these areas to get a clearer picture of where SPIN could add/remove an extra scooter to optimize their deployments.
 
-Start vs. End:
-1. Train Start Knn model to test on end locations
-2. How well can we predict end locations based on start locations?
-```{r}
-#Todo: This model doesn't work yet: don't run
-st_end_knn_model <- nearest_neighbor(neighbors = tune(), weight_func = tune()) |>
-  set_engine('kknn') |>
-  set_mode('regression')
-
-tuning_grid <- grid_regular(neighbors(range = c(5,25)), weight_func(), levels = c(5,4))
-
-
-st_end_knn_recipe <- recipe(density_score_end ~ longitude_start + latitude_start, 
-                           data = combined_pts)
-
-
-
-#c-fold cross validation
-cv_folds <- vfold_cv(combined_pts, v=5)
-
-#knn workflow
-st_end_knn_res <- workflow() |>
-  add_model(st_end_knn_model) |>
-  add_recipe(st_end_knn_recipe) |>
-  tune_grid(resamples = cv_folds, grid = tuning_grid)
-
-st_end_best_params <- select_best(st_end_knn_res, metric = 'rmse')
-
-#knn final workflow
-st_end_knn_final_fit <- workflow() |>
-  add_model(st_end_knn_model) |>
-  add_recipe(st_end_knn_recipe) |>
-  finalize_workflow(st_end_best_params) |>
-  fit(combined_pts)
-
-#deployment final fit
-st_end_knn_final_fit
-
-```
-Start/End Model Plotting:
-```{r}
-st_end_pred <- predict(st_end_knn_final_fit, combined_dens)
-
-pred_comparison <- combined_dens |> 
-  mutate(pred_end_dens = st_end_pred$.pred,
-         actual_end_dens = density_score_end,
-         difference = pred_end_dens - actual_end_dens)
-
-foco_coord_map + 
-  geom_tile(data = pred_comparison, aes(x = longitude_start, y = latitude_start, fill = difference),) +
-  scale_fill_gradient2(low = 'red', mid = 'white', high = 'green', name = 'Predicted vs\nActual End\nDensity') + coord_fixed() + theme_minimal()
-```
 
 references: 
 
