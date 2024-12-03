@@ -46,10 +46,16 @@ Fort Collins is widely considered one of most commuter friendly cities. As the p
 
 #KNN Deployment & Start Heatmaps
 
+```{r KNN-Predictions}
+#Heat254
+```
+
   Compared side by side, the two models bear a strong resemblance to each other with the deployment model showing a more gradual gradient compared to the start model. This matches with the observations when comparing the raw data. There are notable edge effects in areas where the model is predicting past the SPIN service area in Fort Collins.
 
 #KNN Deployment Optimization Map
-
+```{r Optimization-Map}
+#Heat267
+```
   This map highlights where SPIN can improve their deployment strategies. Smooth transitions between colors on the map represent gradual changes in the relationship between deployment and usage patterns, which helps understand not only which areas to make changes, but just how significant those changes should be.
 	
 	The model is less effective reaching toward the outer bounds of the service area in the data. As it reaches the outer bounds an edge effect takes hold and spreads the last noticed pattern past the service area of the data into spaces where no scooters are used. 
