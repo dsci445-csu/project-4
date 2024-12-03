@@ -1,6 +1,6 @@
 ---
 title: "Report Draft"
-author: "Andrew H, Grace C, Nick H., Emily H."
+author: "Andrew H., Grace C., Nick H., Emily P."
 date: "2024-12-02"
 output: pdf_document
 ---
