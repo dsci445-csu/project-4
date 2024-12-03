@@ -77,13 +77,13 @@ mape(test$WeeklyRides, test$stlf)
 
 **Graphing STLF**
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
+plot1 <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = stlf, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("STLF Weekly Rides 2024") +
   geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot1)
 ```
 
 **ARIMA/STLM/THETAM**
@@ -102,13 +102,13 @@ mape(test$WeeklyRides, test$afs)
 29.69 mape on test data
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
+plot2 <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = afs, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("AFS WeeklyRides 2024") +
   geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot2)
 ```
 
 **one model for pre-price change, one model for after**
@@ -124,13 +124,13 @@ mape(test$WeeklyRides, test$CombinedPred)
 29.04 on test data
 
 ```{r}
-plot <- ggplot(test, aes(WeekNum)) +
+plot3 <- ggplot(test, aes(WeekNum)) +
   geom_line(aes(y = CombinedPred, color = "Forecast")) +
   geom_line(aes(y = WeeklyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("CombinedPred WeeklyRides 2024") +
   geom_vline(xintercept = 27, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot3)
 ```
 
 **Plotting through 2025**
@@ -152,11 +152,11 @@ df_stlf <- df_stlf %>%
 ```
 
 ```{r}
-plot <- ggplot(data = df_stlf[43:nrow(df_stlf), ]) +
+plot4 <- ggplot(data = df_stlf[43:nrow(df_stlf), ]) +
   geom_line(aes(x = forecastDate, y = `Point Forecast`)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   ggtitle("Forecasting Weekly Rides Through 2025")
-ggplotly(plot)
+ggplotly(plot4)
 ```
 
 
@@ -213,13 +213,13 @@ mape(test$MonthlyRides, test$hybrid)
 14.39 mape on test
 
 ```{r}
-plot <- ggplot(test, aes(month)) +
+plot5 <- ggplot(test, aes(month)) +
   geom_line(aes(y = hybrid, color = "Forecast")) +
   geom_line(aes(y = MonthlyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("Hybrid Mod1 Monthly Rides 2024") +
   geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot5)
 ```
 
 **Boosting**
@@ -242,13 +242,13 @@ mape(test$MonthlyRides, test$boosting)
 29.39 mape on test data
 
 ```{r}
-plot <- ggplot(test, aes(month)) +
+plot6 <- ggplot(test, aes(month)) +
   geom_line(aes(y = boosting, color = "Forecast")) +
   geom_line(aes(y = MonthlyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("Boosting MonthlyRides 2024") +
   geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot6)
 ```
 
 **one model for pre-price change, one model for after**
@@ -264,13 +264,13 @@ mape(test$MonthlyRides, test$CombinedPred)
 8.86 on test
 
 ```{r}
-plot <- ggplot(test, aes(month)) +
+plot7 <- ggplot(test, aes(month)) +
   geom_line(aes(y = CombinedPred, color = "Forecast")) +
   geom_line(aes(y = MonthlyRides, color = "Actual"))+
   scale_color_manual(values = c("Forecast" = "darkred", "Actual" = "darkblue")) +
   ggtitle("CombinedPred MonthlyRides 2024") +
   geom_vline(xintercept = 7, linetype = "dashed", color = "black", size = 0.5)
-ggplotly(plot)
+ggplotly(plot7)
 ```
 
 **Plotting through 2025**
@@ -303,10 +303,10 @@ boost_test_df <- boost_test_df %>% arrange(forecastDate)
 ```
 
 ```{r}
-plot <- ggplot(aes(x = forecastDate, y = pred), data = boost_test_df[11:nrow(boost_test_df), ]) +
+plot8 <- ggplot(aes(x = forecastDate, y = pred), data = boost_test_df[11:nrow(boost_test_df), ]) +
   geom_line() +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   ggtitle("Forecasting Monthly Rides Through 2025")
-ggplotly(plot)
+ggplotly(plot8)
 ```
 
