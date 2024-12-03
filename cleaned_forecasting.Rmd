@@ -12,26 +12,6 @@ set.seed(227)
 ```
 
 ```{r}
-# load packages
-library(tidyverse)
-library(tidymodels)
-library(readr)
-library(ggplot2)
-library(forecast)
-library(forecastHybrid)
-library(fpp2)
-library(TTR)
-library(dplyr)
-library(lubridate)
-library(plotly)
-library(rio)
-library(tseries)
-library(zoo)
-library(keras)
-library(tensorflow)
-```
-
-```{r}
 # load data
 daily_scooters <- read.csv("FOCO Spin Data/scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")
 daily_scooters <- daily_scooters %>% rename("TripsByDate" = Trips.By.Date...Starts...Spin...Scooters)
