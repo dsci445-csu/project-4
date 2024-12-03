@@ -201,9 +201,14 @@ join_data3$Total_Matched_Trips <- as.numeric(join_data3$Total_Matched_Trips)
 
 join_data <- st_transform(join_data, crs = 4326)
 
+color_pal <- colorNumeric(
+  palette = "viridis",
+  domain = c(0, 500000)
+)
+
 a <- leaflet(join_data) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~colorNumeric(rev("viridis"), Total_Matched_Trips)(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -214,19 +219,18 @@ a <- leaflet(join_data) %>%
                               Weighted_Average_Percentage)
                ) %>%
   addLegend(position = "bottomright", 
-            pal = colorNumeric(rev("viridis"), 
-                               join_data$Total_Matched_Trips), 
-            values = join_data$Total_Matched_Trips, 
+            pal = color_pal, 
+            values = c(0, 500000), 
             title = HTML("First Price Period<br>Total Matched Trips")
             )
-# a
+a
 ```
 ```{r}
-join_data2 <- st_transform(join_data3, crs = 4326)
+join_data2 <- st_transform(join_data2, crs = 4326)
 
 b <- leaflet(join_data2) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~colorNumeric(rev("viridis"), Total_Matched_Trips)(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -237,19 +241,18 @@ b <- leaflet(join_data2) %>%
                               Weighted_Average_Percentage)
                ) %>%
   addLegend(position = "bottomright", 
-            pal = colorNumeric(rev("viridis"), 
-                               join_data2$Total_Matched_Trips), 
-            values = join_data2$Total_Matched_Trips, 
+            pal = color_pal, 
+            values = c(0, 500000), 
             title = HTML("Second Price Period<br>Total Matched Trips")
             )
-# b
+b
 ```
 ```{r}
 join_data3 <- st_transform(join_data3, crs = 4326)
 
 c <- leaflet(join_data3) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~colorNumeric(rev("viridis"), Total_Matched_Trips)(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -260,9 +263,8 @@ c <- leaflet(join_data3) %>%
                               Weighted_Average_Percentage)
                ) %>%
   addLegend(position = "bottomright", 
-            pal = colorNumeric(rev("viridis"), 
-                               join_data3$Total_Matched_Trips), 
-            values = join_data3$Total_Matched_Trips, 
+            pal = color_pal, 
+            values = c(0, 500000), 
             title = HTML("Third Price Period<br>Total Matched Trips")
             )
 c
