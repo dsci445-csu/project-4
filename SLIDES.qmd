@@ -49,19 +49,19 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## Weekly Models
 
-![](Model Photos/grace_pic1.png)
+![](Model%20Photos/grace_pic1.png)
 
 ## Weekly Forecasting
 
-![](Model Photos/grace_pic2.png)
+![](Model%20Photos/grace_pic2.png)
 
 ## Monthly Models
 
-![](Model Photos/grace_pic3.png)
+![](Model%20Photos/grace_pic3.png)
 
 ## Monthly Forecasting
 
-![](Model Photos/grace_pic4.png)
+![](Model%20Photos/grace_pic4.png)
 
 ## Matched Rides Per Price Period
 
