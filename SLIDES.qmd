@@ -1,5 +1,5 @@
 ---
-title: "Title"
+title: "DSCI 445 Final Project"
 author: "Andrew H, Grace C, Nick H, Emily P "
 format: revealjs
 editor: visual
@@ -43,7 +43,15 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Heat Map Slide(s)\>
 
-## \<Matched Rides and Price(s)\>
+## Matched Rides Per Price Period
+
+![](images/longboy.png)
+
+The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
+
+Wanted to examine this further, but ran into problems.
+
+## Predicting Future Rides without Price Period 3
 
 ## Our Research Question
 
