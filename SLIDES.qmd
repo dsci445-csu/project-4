@@ -1,0 +1,24 @@
+---
+title: "Title"
+author: "Andrew H, Grace C, Nick H, Emily P "
+format: revealjs
+editor: visual
+---
+
+## Spin E-Scooters
+
+*first slide, inserting photo of scooters here*
+
+## Trouble with Data
+
+*blah blah*
+
+## Exploratory Analysis
+
+\*Basic images and research\*
+
+## Our Research Question
+
+\*How does price/rate effect ridership and can we predict future rides\*
+
+## Conclusion
