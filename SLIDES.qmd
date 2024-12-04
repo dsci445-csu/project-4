@@ -9,6 +9,14 @@ editor: visual
 
 ![](images/Untitled33.png){fig-align="center"}
 
+## Research Question
+
+Grace's Research Question
+
+-   Emily's Research Question
+
+-   Nick's Research Question
+
 ## Examining the Data
 
 ::: r-fit-text
@@ -35,15 +43,11 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis\>
 
-\*we talk about how we all explored different ideas, so jamovi stuff can be posted here, we talk about price changes, Nick would paste all of his heat maps stuff here and talk about that, I'll talk about matched rides and price change predictions?\*
-
-## \<Simple Jamovi Slide(s)\>
-
 ![](images/00001c.png){width="242"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
-## \<Heat Map Slide(s)\>
+## \<Grace's Prediction Map Slide(s)\>
 
 ## Matched Rides Per Price Period
 
@@ -59,11 +63,7 @@ Wanted to examine this further, but ran into problems.
 
 The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
-## Our Research Question
-
-\*"This analysis was fun, but we found ourselves really wanting to focus on how the price effects rides and the predicted future impacts it will have" or something like that\*
-
-## \<Grace's Prediction Map Slide(s)\>
+## \<Nick's Prediction Slides\>
 
 ## \<Conclusion Slide\>
 
