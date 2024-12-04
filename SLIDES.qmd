@@ -1,0 +1,70 @@
+---
+title: "DSCI 445 Final Project"
+author: "Andrew H, Grace C, Nick H, Emily P "
+format: revealjs
+editor: visual
+---
+
+## Spin E-Scooters
+
+\*first slide, inserting scooter photos here. Using this slide to open up the project\*
+
+## Examining the Data
+
+::: r-fit-text
+Our data was provided for by three different sources, and as such, there were a lot of different formats for the data we worked with and options for the project
+
+-   Fort Collins Transportation Planner
+
+    -   fort-collins-curb-events-deployments.csv
+
+    -   fort-collins-curb-events-trip_starts.csv
+
+    -   fort-collins-curb-events-trip_ends.csv
+
+-   City of Fort Collins Website
+
+    -   scooters-analyze-trips-by-date.csv
+
+    -   fortcollins-routs-data-for-scooter-in-all-time.csv
+
+    -   fortcollins-metrics-data-for-scooter-csv
+
+-   Head of Government Partnership at Spin
+:::
+
+## \<Exploratory Analysis\>
+
+\*we talk about how we all explored different ideas, so jamovi stuff can be posted here, we talk about price changes, Nick would paste all of his heat maps stuff here and talk about that, I'll talk about matched rides and price change predictions?\*
+
+## \<Simple Jamovi Slide(s)\>
+
+![](images/00001c.png){width="242"}
+
+\*Add more basic graphs to help readers understand our data yk\*
+
+## \<Heat Map Slide(s)\>
+
+## Matched Rides Per Price Period
+
+![](images/longboy.png){fig-align="center"}
+
+The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
+
+Wanted to examine this further, but ran into problems.
+
+## Predicting Future Rides without Price Period 3
+
+![](images/hehemeep.png){fig-align="center" width="342"}
+
+The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
+
+## Our Research Question
+
+\*"This analysis was fun, but we found ourselves really wanting to focus on how the price effects rides and the predicted future impacts it will have" or something like that\*
+
+## \<Grace's Prediction Map Slide(s)\>
+
+## \<Conclusion Slide\>
+
+\*Can just wrap this up nicely, with this price here's how we predict spin's market to react\*

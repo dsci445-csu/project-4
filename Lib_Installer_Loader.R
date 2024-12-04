@@ -7,7 +7,7 @@ packages <- c("tidyverse","tidymodels","sf",
               "forecastHybrid","fpp2","TTR",
               "dplyr","lubridate","plotly",
               "rio","tseries","zoo","keras",
-              "tensorflow")
+              "tensorflow", "plotly")
               
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -17,3 +17,4 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+

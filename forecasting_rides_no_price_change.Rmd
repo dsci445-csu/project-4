@@ -1,0 +1,517 @@
+    Working with Git Project:
+    1. Make sure project is set to D445_Project in RStudio
+    2. In RStudio Console:
+        getwd() = Verify working directory is set to this project
+        setwd() = Can change working directory to this path
+        list.files() = Can verify the files are available
+    3. In RStudio Terminal:
+        cd <destination> = Change directory
+        cd - = Go back to previous directory
+        ls = Lists contents of current directory
+        git init = Initialize git connection
+        git status = Check what status needs to be changed before comitting
+          - git  add <file>
+          - git rm <file>
+          - git restore <file>
+        git commit -m "" = Commit changes from terminal with message
+        git push = Publish local changes
+    4. Might need to open GitHub Desktop and verify changes.
+
+```{r, warning=F, message=F}
+#############
+# Libraries #
+#############
+
+library(dplyr)
+library(forecast)
+library(ggplot2)
+library(htmltools)
+library(leaflet)
+library(lubridate)
+library(mapview)
+library(prophet) 
+library(sf)
+library(tidyverse)
+library(tmap)
+library(webshot)
+```
+
+Creating dfs for the price, number of daily bike trips, and the number of daily scooter trips taken over our entire data period.
+
+```{r}
+data_dir <- 'FOCO Spin Data'
+
+## https://public.ridereport.com/fortcollins
+# df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+# df_hourly_price_rate <- data.frame(read.csv(file.path(data_dir,"spin-prices.csv")))
+# date_deploy <- c("2021-07-26", "2022-11-01", "2023-07-01", "2024-07-01")
+# scooter_deploy <- c(500, 500, 540, 630)
+# df_sccooters_deployed <- data.frame(Date = date_deploy, 
+#                                     Scooters = scooter_deploy)
+
+df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
+
+## data from July 2021 to December 2021
+df_matched_2021_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2021-Q3.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2021_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2021-Q4.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2022_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q1.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2022_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q2.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2022_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q3.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2022_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q4.csv")),
+                         stringsAsFactors = FALSE)
+
+## data from January 2023 to June 2024
+df_matched_2023_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q1.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2023_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q2.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2023_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q3.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2023_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q4.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2024_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q1.csv")),
+                         stringsAsFactors = FALSE)
+df_matched_2024_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q2.csv")),
+                         stringsAsFactors = FALSE)
+
+## data from July 2024 to September 2023
+df_matched_2024_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q3.csv")),
+                         stringsAsFactors = FALSE)
+
+
+```
+
+```{r}
+price_change_1 <- as.Date("2021-07-26")
+price_change_2 <- as.Date("2022-12-01")
+price_change_3 <- as.Date("2024-07-01")
+df_daily_scooter_trips$Date <- as.Date(df_daily_scooter_trips$Date)
+daily_date <- df_daily_scooter_trips$Date
+daily_trips <- df_daily_scooter_trips$Trips.By.Date...Starts...Spin...Scooters
+plot_scooter_rides_daily <- ggplot(data = df_daily_scooter_trips,
+                                   mapping = aes(x = daily_date, 
+                                                 y = daily_trips)) +
+  geom_line(alpha = 0.5) +
+  theme_minimal() +
+  scale_x_continuous(breaks = pretty(daily_date, n = 8)) +
+  geom_vline(xintercept = price_change_1, color = "blue") +
+  geom_vline(xintercept = price_change_2, color = "blue") +
+  geom_vline(xintercept = price_change_3, color = "blue") +
+  annotate("text", x = as.Date("2021-07-26"), 
+           y = max(daily_trips, na.rm = TRUE),
+           label = "Initial Price\n(0.30 $/hr)\nJuly 26, 2021", 
+           angle = 0, hjust = -0.1, size = 2) +
+  annotate("text", x = as.Date("2022-12-01"), 
+           y = max(daily_trips, na.rm = TRUE),
+           label = "First Price\nChange (0.40 $/hr)\nDec 1, 2022", 
+           angle = 0, hjust = -0.1, size = 2) +
+  annotate("text", x = as.Date("2024-07-01"), 
+           y = max(daily_trips, na.rm = TRUE),
+           label = "Second Price\nChange\nJuly 1, 2024", 
+           angle = 0, hjust = -0.1, size = 2) +
+  labs(x = "Date",
+       y = "Rides",
+       title = "Number of Rides Taken on Spin Scooters")
+plot_scooter_rides_daily
+```
+
+```{r}
+df_p1 <- rbind(df_matched_2021_q3, df_matched_2021_q4,
+               df_matched_2022_q1, df_matched_2022_q2,
+               df_matched_2022_q3, df_matched_2022_q4)
+
+df_p2 <- rbind(df_matched_2023_q1, df_matched_2023_q2,
+               df_matched_2023_q3, df_matched_2023_q4,
+               df_matched_2024_q1, df_matched_2024_q2)
+
+df_p3 <- df_matched_2024_q3
+
+data_list <- list(df_p1, df_p2, df_p3)
+
+for (i in seq_along(data_list)) {
+  df <- data_list[[i]]
+  df$Count.of.Matched.Trips <- gsub(",", "", df$Count.of.Matched.Trips)
+  df$Count.of.Matched.Trips <- gsub("< 100", "50",
+                                    df$Count.of.Matched.Trips)
+  df$Count.of.Matched.Trips <- as.numeric(df$Count.of.Matched.Trips)
+  df <- na.omit(df)
+
+  df <- df %>%
+    group_by(Segment.Name) %>%
+    summarize(
+      Total_Matched_Trips = sum(Count.of.Matched.Trips),
+      Weighted_Average_Percentage = sum(Count.of.Matched.Trips *
+                                          Percentage.of.Matched.Trips) /
+        sum(Count.of.Matched.Trips)
+      )
+  df$Price_Period <- i
+  df <- rename(df, Segment_Name = Segment.Name)
+  data_list[[i]] <- df
+}
+
+df_p1 <- data_list[[1]]
+df_p2 <- data_list[[2]]
+df_p3 <- data_list[[3]]
+
+# head(df_p1)
+
+foco <- st_read("~/GitHub/D445_Project/Street_Centerlines")
+
+# head(foco)
+
+foco$STRNAME <- str_to_upper(str_trim(foco$STRNAME))
+foco <- foco %>%
+  arrange(STRNAME)
+foco$STRNAME <- gsub(" ST", " STREET", foco$STRNAME)
+foco$STRNAME <- gsub(" AVE", " AVENUE", foco$STRNAME)
+foco$STRNAME <- gsub(" BLVD", " BOULEVARD", foco$STRNAME)
+foco$STRNAME <- gsub(" CT", " COURT", foco$STRNAME)
+foco$STRNAME <- gsub(" DR", " DRIVE", foco$STRNAME)
+foco$STRNAME <- gsub(" CIR", " CIRCLE", foco$STRNAME)
+foco$STRNAME <- gsub(" LN", " LANE", foco$STRNAME)
+foco$STRNAME <- gsub(" MT", " MOUNT", foco$STRNAME)
+foco$STRNAME <- gsub(" PKWY", " PARKWAY", foco$STRNAME)
+foco$STRNAME <- gsub(" RD", " ROAD", foco$STRNAME)
+foco$STRNAME <- gsub("N ", "NORTH ", foco$STRNAME)
+foco$STRNAME <- gsub("S ", "SOUTH ", foco$STRNAME)
+foco$STRNAME <- gsub("E ", "EAST ", foco$STRNAME)
+foco$STRNAME <- gsub("W ", "WEST ", foco$STRNAME)
+df_p1$Segment_Name <- str_to_upper(str_trim(df_p1$Segment_Name))
+df_p2$Segment_Name <- str_to_upper(str_trim(df_p2$Segment_Name))
+df_p3$Segment_Name <- str_to_upper(str_trim(df_p3$Segment_Name))
+
+join_data <- foco %>%
+  left_join(df_p1, by = c("STRNAME" = "Segment_Name"))
+
+# sum(!is.na(join_data$Total_Matched_Trips))
+
+join_data <- join_data %>%
+  filter(!is.na(Total_Matched_Trips))
+join_data$Total_Matched_Trips <- as.numeric(join_data$Total_Matched_Trips)
+
+# head(join_data)
+
+join_data2 <- foco %>%
+  left_join(df_p2, by = c("STRNAME" = "Segment_Name"))
+join_data2 <- join_data2 %>%
+  filter(!is.na(Total_Matched_Trips))
+join_data2$Total_Matched_Trips <- as.numeric(join_data2$Total_Matched_Trips)
+
+join_data3 <- foco %>%
+  left_join(df_p3, by = c("STRNAME" = "Segment_Name"))
+join_data3 <- join_data3 %>%
+  filter(!is.na(Total_Matched_Trips))
+join_data3$Total_Matched_Trips <- as.numeric(join_data3$Total_Matched_Trips)
+```
+```{r}
+
+join_data <- st_transform(join_data, crs = 4326)
+
+color_pal <- colorNumeric(
+  palette = "viridis",
+  domain = c(0, 500000)
+)
+
+a <- leaflet(join_data) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
+               weight = 2,
+               opacity = 0.9,
+               popup = ~paste("Street Name:", 
+                              STRNAME, 
+                              "<br>Total Matched Trips:",
+                              Total_Matched_Trips,
+                              "<br>Weighted Average Percentage:",
+                              Weighted_Average_Percentage)
+               ) %>%
+  addLegend(position = "bottomright", 
+            pal = color_pal, 
+            values = c(0, 500000), 
+            title = HTML("First Price Period<br>Total Matched Trips")
+            )
+a
+```
+```{r}
+join_data2 <- st_transform(join_data2, crs = 4326)
+
+b <- leaflet(join_data2) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
+               weight = 2,
+               opacity = 0.9,
+               popup = ~paste("Street Name:", 
+                              STRNAME, 
+                              "<br>Total Matched Trips:",
+                              Total_Matched_Trips,
+                              "<br>Weighted Average Percentage:",
+                              Weighted_Average_Percentage)
+               ) %>%
+  addLegend(position = "bottomright", 
+            pal = color_pal, 
+            values = c(0, 500000), 
+            title = HTML("Second Price Period<br>Total Matched Trips")
+            )
+b
+```
+```{r}
+join_data3 <- st_transform(join_data3, crs = 4326)
+
+c <- leaflet(join_data3) %>%
+  addProviderTiles("CartoDB.Positron") %>%
+  addPolylines(color = ~color_pal(Total_Matched_Trips),
+               weight = 2,
+               opacity = 0.9,
+               popup = ~paste("Street Name:", 
+                              STRNAME, 
+                              "<br>Total Matched Trips:",
+                              Total_Matched_Trips,
+                              "<br>Weighted Average Percentage:",
+                              Weighted_Average_Percentage)
+               ) %>%
+  addLegend(position = "bottomright", 
+            pal = color_pal, 
+            values = c(0, 500000), 
+            title = HTML("Third Price Period<br>Total Matched Trips")
+            )
+c
+```
+
+```{r}
+# df_matched_trips <- rbind(df_p1, df_p2, df_p3)
+# 
+# df_matched_trips <- df_matched_trips %>%
+#     mutate(
+#       Normalized_Weighted_Avg_Percentage = (Weighted_Average_Percentage - min(Weighted_Average_Percentage)) / (max(Weighted_Average_Percentage) - min(Weighted_Average_Percentage))
+#       )
+# 
+# # head(df_matched_trips)
+```
+```{r}
+# df_matched_2021_q3$Quarter<- "2021 Q3"
+# df_matched_2021_q3$Price_Period <- "1"
+# df_matched_2021_q4$Quarter<- "2021 Q4"
+# df_matched_2021_q4$Price_Period <- "1"
+# df_matched_2022_q1$Quarter<- "2022 Q1"
+# df_matched_2022_q1$Price_Period <- "1"
+# df_matched_2022_q2$Quarter<- "2022 Q2"
+# df_matched_2022_q2$Price_Period <- "1"
+# df_matched_2022_q3$Quarter<- "2022 Q3"
+# df_matched_2022_q3$Price_Period <- "1"
+# df_matched_2022_q4$Quarter<- "2022 Q4"
+# df_matched_2022_q4$Price_Period <- "1"
+# 
+# df_matched_2023_q1$Quarter<- "2023 Q1"
+# df_matched_2023_q1$Price_Period <- "2"
+# df_matched_2023_q2$Quarter<- "2023 Q2"
+# df_matched_2023_q2$Price_Period <- "2"
+# df_matched_2023_q3$Quarter<- "2023 Q3"
+# df_matched_2023_q3$Price_Period <- "2"
+# df_matched_2023_q4$Quarter<- "2023 Q4"
+# df_matched_2023_q4$Price_Period <- "2"
+# df_matched_2024_q1$Quarter<- "2024 Q1"
+# df_matched_2024_q1$Price_Period <- "2"
+# df_matched_2024_q2$Quarter<- "2024 Q1"
+# df_matched_2024_q2$Price_Period <- "2"
+# 
+# df_matched_2024_q3$Quarter<- "2024 Q3"
+# df_matched_2024_q3$Price_Period <- "3"
+# 
+# data_list2 <- list(df_matched_2021_q3, df_matched_2021_q4,
+#                df_matched_2022_q1, df_matched_2022_q2,
+#                df_matched_2022_q3, df_matched_2022_q4,
+#                df_matched_2023_q1, df_matched_2023_q2,
+#                df_matched_2023_q3, df_matched_2023_q4,
+#                df_matched_2024_q1, df_matched_2024_q2,
+#                df_matched_2024_q3)
+# 
+# for (i in seq_along(data_list2)) {
+#   df <- data_list2[[i]]
+#   df <- subset(df, select = c(Segment.Name, Percentage.of.Matched.Trips,
+#                               Count.of.Matched.Trips, Quarter,
+#                               Price_Period))
+#   df$Count.of.Matched.Trips <- gsub(",", "", df$Count.of.Matched.Trips)
+#   df$Count.of.Matched.Trips <- gsub("< 100", "50", 
+#                                     df$Count.of.Matched.Trips)
+#   df$Count.of.Matched.Trips <- as.numeric(df$Count.of.Matched.Trips)
+#   df <- na.omit(df)
+#   
+#   df <- df %>%
+#     group_by(Segment.Name, Quarter, Price_Period) %>%
+#     summarize(
+#       Total_Matched_Trips = sum(Count.of.Matched.Trips),
+#       Weighted_Average_Percentage = sum(Count.of.Matched.Trips *
+#                                           Percentage.of.Matched.Trips) /
+#         sum(Count.of.Matched.Trips)
+#       ) %>% 
+#     ungroup()
+#   df <- rename(df, Segment_Name = Segment.Name)
+#   data_list2[[i]] <- df
+# }
+# a <- data_list2[[1]]
+# b <- data_list2[[2]]
+# c <- data_list2[[3]]
+# d <- data_list2[[4]]
+# e <- data_list2[[5]]
+# f <- data_list2[[6]]
+# g <- data_list2[[7]]
+# h <- data_list2[[8]]
+# i <- data_list2[[9]]
+# j <- data_list2[[10]]
+# k <- data_list2[[11]]
+# l <- data_list2[[12]]
+# m <- data_list2[[13]]
+# 
+# test_df <- rbind(a, b, c, d, e, f, g, h, i, j, k, l, m)
+# test_df <- test_df %>% 
+#   filter(!is.na(Segment_Name) & Segment_Name != "")
+# head(test_df)
+```
+```{r}
+# splice_plot <- ggplot(data = df_matched_trips, aes(x = as.numeric(as.factor(Price_Period)), y = Normalized_Weighted_Avg_Percentage)) +
+#   geom_point() +
+#   geom_smooth(method = "lm", formula = y ~ ns(x, df = 3), se = FALSE) +  
+#   # geom_vline(xintercept = c(2, 3), linetype = "dashed", color = "red") +  
+#   # annotate("text", x = 2, y = max(combined_data$Normalized_Weighted_Avg_Percentage) * 0.95, label = "Price Change 1", color = "red", angle = 90, vjust = 1) +  
+#   # annotate("text", x = 3, y = max(combined_data$Normalized_Weighted_Avg_Percentage) * 0.95, label = "Price Change 2", color = "red", angle = 90, vjust = 1) +
+#   theme_light() +
+#   labs(
+#     title = "Returning Users with Price Changes Highlighted",
+#     x = "Quarter",
+#     y = "Normalized Percentage of Returning Users",
+#     color = "Street Segment"
+#   )
+# plot(splice_plot)
+```
+
+```{r}
+df_daily_scooter_trips$Date <- as.Date(df_daily_scooter_trips$Date)
+df_daily_scooter_trips$price = NA
+
+price_hehe <- data.frame(
+  start_date = as.Date(c('2021-07-26', '2022-12-01', '2024-07-01')),  # Price change start dates
+  end_date = as.Date(c('2022-11-30', '2024-06-30', '2024-10-17')),    # Price change end dates
+  price = c(0.30, 0.40, 0.35)  # Prices during each time period
+)
+
+df_daily_scooter_trips <- df_daily_scooter_trips %>%
+  mutate(price = case_when(
+    Date >= price_hehe$start_date[1] & Date <= price_hehe$end_date[1] ~
+      price_hehe$price[1],
+    Date >= price_hehe$start_date[2] & Date <= price_hehe$end_date[2] ~
+      price_hehe$price[2],
+    Date >= price_hehe$start_date[3] & Date <= price_hehe$end_date[3] ~
+      price_hehe$price[3],
+    TRUE ~ NA_real_)
+  )
+
+# head(df_daily_scooter_trips)
+```
+```{r}
+actual_rides_data <- df_daily_scooter_trips %>%
+  filter(Date >= as.Date("2021-07-01")) %>%
+  select(Date, actual_rides = Trips.By.Date...Starts...Spin...Scooters)
+
+future_dates <- data.frame(Date = seq(as.Date("2024-07-01"), 
+                                      as.Date("2024-10-17"), 
+                                      by = "day"))
+future_dates$price <- 0.40
+
+## Linear Model
+training_data <- df_daily_scooter_trips %>%
+  filter(Date < as.Date("2024-07-01")) %>%
+  mutate(Trip_Occurred = ifelse(Trips.By.Date...Starts...Spin...Scooters > 0, 1, 0))
+model <- lm(Trips.By.Date...Starts...Spin...Scooters ~ Date + 
+              price, data = training_data)
+future_dates$lm_forecast <- predict(model, newdata = future_dates)
+
+## Logistic Regression Model
+model2 <- glm(Trip_Occurred ~ Date + 
+              price, 
+              data = training_data,
+              family = binomial)
+future_dates$logistic_forecast <- predict(model2, newdata = future_dates, type = "response")
+
+## ARIMA Model
+arima_model <- auto.arima(training_data$Trips.By.Date...Starts...Spin...Scooters)
+arima_forecast <- forecast(arima_model, h = nrow(future_dates))
+future_dates$arima_forecast <- as.numeric(arima_forecast$mean)
+
+## ETS Model
+ets_model <- ets(training_data$Trips.By.Date...Starts...Spin...Scooters)
+ets_forecast <- forecast(ets_model, h = nrow(future_dates))
+future_dates$ets_forecast <- as.numeric(ets_forecast$mean)
+
+## Prophet Model
+prophet_data <- training_data %>% select(Date,
+                                         Trips.By.Date...Starts...Spin...Scooters) %>% 
+  rename(ds = Date, y = Trips.By.Date...Starts...Spin...Scooters)
+prophet_model <- prophet(prophet_data)
+future_prophet <- make_future_dataframe(prophet_model, 
+                                        periods = nrow(future_dates))
+prophet_forecast <- predict(prophet_model, future_prophet)
+future_dates$prophet_forecast <- prophet_forecast$yhat[1:nrow(future_dates)]
+```
+```{r, fig.width=14, fig.height=8, message=F, warning=F}
+combined_data <- actual_rides_data %>%
+  full_join(future_dates, by = "Date")
+
+price_change_1 <- as.Date("2021-07-26")
+price_change_2 <- as.Date("2022-12-01")
+price_change_3 <- as.Date("2024-07-01")
+
+ggplot() +
+  geom_line(data = combined_data, aes(x = Date, y = actual_rides, 
+                                      color = "Actual Rides (with price change)"), 
+            size = 1, alpha = 0.5) +
+  geom_line(data = combined_data, aes(x = Date, y = lm_forecast, 
+                                      color = "LM Forecast (no price change)"), 
+            size = 1) +
+  # geom_line(data = combined_data, aes(x = Date, y = logistic_forecast, 
+  #                                     color = "Logistic Forecast (no price change)"), size = 1) +
+  geom_line(data = combined_data, aes(x = Date, y = arima_forecast, 
+                                      color = "ARIMA Forecast (no price change)"), 
+            size = 1) +
+  geom_line(data = combined_data, aes(x = Date, y = ets_forecast, 
+                                      color = "ETS Forecast (no price change)"), 
+            size = 1) +
+  geom_line(data = combined_data, aes(x = Date, y = prophet_forecast, 
+                                      color = "Prophet Forecast (no price change)"), 
+            size = 1) +
+  geom_rect(aes(xmin = as.Date("2024-07-01"),
+                xmax = as.Date("2024-10-17"), 
+                ymin = -Inf, ymax = Inf), 
+            fill = "lightblue", alpha = 0.1) +
+  labs(title = "Actual Scooter Rides vs Forecasted Scooter Rides Without Price Change (LM, ARIMA, ETS, Prophet)",
+       x = "Date", 
+       y = "Number of Rides",
+       subtitle = "Data Collected from City of Fort Collins Spin E-Scooters") +
+  scale_color_manual(values = c("Actual Rides (with price change)" = "black", 
+                                "LM Forecast (no price change)" = "blue",
+                                # "Logistic Forecast (no price change)" = "orange",
+                                "ARIMA Forecast (no price change)" = "red", 
+                                "ETS Forecast (no price change)" = "green", 
+                                "Prophet Forecast (no price change)" = "purple")) +
+  theme_minimal() +
+  geom_vline(xintercept = price_change_1, color = "black") +
+  geom_vline(xintercept = price_change_2, color = "black") +
+  geom_vline(xintercept = price_change_3, color = "black") +
+  annotate("text", x = as.Date("2021-07-26"), 
+           y = max(combined_data$actual_rides, na.rm = TRUE),
+           label = "Initial Price\n(0.30 $/hr)\nJuly 26, 2021", 
+           angle = 0, hjust = -0.1) +
+  annotate("text", x = as.Date("2022-12-01"), 
+           y = max(combined_data$actual_rides, na.rm = TRUE),
+           label = "First Price\nChange (0.40 $/hr)\nDec 1, 2022", 
+           angle = 0, hjust = -0.1) +
+  annotate("text", x = as.Date("2024-07-01"), 
+           y = max(combined_data$actual_rides, na.rm = TRUE),
+           label = "Second Price\nChange\nJuly 1, 2024", 
+           angle = 0, hjust = -0.1) +
+  theme(legend.title = element_blank()
+)
+```
