@@ -7,7 +7,7 @@ editor: visual
 
 ## Spin E-Scooters
 
-\*first slide, inserting scooter photos here. Using this slide to open up the project\*
+![](images/Untitled33.png){fig-align="center"}
 
 ## Examining the Data
 
