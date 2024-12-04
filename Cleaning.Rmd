@@ -1,0 +1,24 @@
+```{r}
+# Libs
+library(readr)
+library(tidymodels)
+library(broom)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+# Pulling file into environment
+
+Routes <- read_csv("FOCO Spin Data/fortcollins-routes-data-for-scooter-in-all-time.csv")
+
+# Viewing Data
+head(Routes)
+
+Routes |>
+  group_by(`Segment Name`) |>
+  summarize(Count = n()) |>
+  arrange(desc(Count))
+```
+
