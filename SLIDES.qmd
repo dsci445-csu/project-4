@@ -9,16 +9,48 @@ editor: visual
 
 *first slide, inserting photo of scooters here*
 
-## Trouble with Data
+## Examining the Data
 
-*blah blah*
+::: r-fit-text
+Our data was provided for by three different sources, and as such, there were a lot of different formats for the data we worked with and options for the project
 
-## Exploratory Analysis
+-   Fort Collins Transportation Planner
 
-\*Basic images and research\*
+    -   fort-collins-curb-events-deployments.csv
+
+    -   fort-collins-curb-events-trip_starts.csv
+
+    -   fort-collins-curb-events-trip_ends.csv
+
+-   City of Fort Collins Website
+
+    -   scooters-analyze-trips-by-date.csv
+
+    -   fortcollins-routs-data-for-scooter-in-all-time.csv
+
+    -   fortcollins-metrics-data-for-scooter-csv
+
+-   Head of Government Partnership at Spin
+:::
+
+## \<Exploratory Analysis\>
+
+\*we talk about how we all explored different ideas, so jamovi stuff can be posted here, we talk about price changes, Nick would paste all of his heat maps stuff here and talk about that, I'll talk about matched rides and price change predictions?\*
+
+## \<Simple Jamovi Slide\>
+
+\*I have this as just one slide but we can make multiple\*
+
+## \<Heat Map Slide\>
+
+## \<Matched Rides and Price\>
 
 ## Our Research Question
 
-\*How does price/rate effect ridership and can we predict future rides\*
+\*"This analysis was fun, but we found ourselves really wanting to focus on how the price effects rides and the predicted future impacts it will have" or something like that\*
 
-## Conclusion
+## \<Grace's Prediction Map slides!\>
+
+## \<Conclusion\>
+
+\*Can just wrap this up nicely, with this price here's how we predict spin's market to react\*
