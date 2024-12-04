@@ -39,19 +39,25 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Simple Jamovi Slide(s)\>
 
-\*I have this as just one slide but we can make multiple\*
+![](images/00001c.png){width="242"}
+
+\*Add more basic graphs to help readers understand our data yk\*
 
 ## \<Heat Map Slide(s)\>
 
 ## Matched Rides Per Price Period
 
-![](images/longboy.png)
+![](images/longboy.png){fig-align="center"}
 
 The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
 
 Wanted to examine this further, but ran into problems.
 
 ## Predicting Future Rides without Price Period 3
+
+![](images/hehemeep.png){fig-align="center" width="342"}
+
+The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
 ## Our Research Question
 
