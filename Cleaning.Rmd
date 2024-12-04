@@ -1,0 +1,37 @@
+```{r}
+# Libs
+library(readr)
+library(tidymodels)
+library(broom)
+library(tidyverse)
+library(dplyr)
+```
+
+
+```{r}
+# Pulling file into environment
+
+Routes <- read_csv("FOCO Spin Data/fortcollins-routes-data-for-scooter-in-all-time.csv")
+Streets <- read_csv("FoCo St:Juris/FoCoStreets.csv")
+Juris <- read_csv("FoCo St:Juris/Jurisdiction.csv")
+
+
+# Viewing Data
+head(Routes)
+summary(Routes)
+
+Routes |>
+  group_by(`Segment Name`) |>
+  summarize(Count = n()) |>
+  arrange(desc(Count))
+```
+
+```{r}
+# Making CSV that Pairs Streets and Jurisdiction
+
+Streets |> 
+  filter(str_city == 'FORT COLLINS') -> CSU_STs
+
+CSU_STs
+```
+
