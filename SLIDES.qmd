@@ -91,17 +91,17 @@ Wanted to examine this further, but ran into problems.
 
 ## Raw Spatial Data Mapping
 
-![](Model%20Photos/Start-Dens-Points.png)
-
-## Raw Spatial Density Heatmapping
-
 ![](Model%20Photos/points.png)
+
+## Raw Spatial Density Heat Mapping
+
+![](Model%20Photos/Scooter_Heatmap_Density.png)
 
 ## Mapping KNN Model Predictions
 
 Models were fit under a 20 fold cross validation. Both models selected an epanechnikov kernel and best k = 15. The Deployment KNN model reported an MSE of 0.04891901 and the Start KNN model reported an MSE of 0. 04380498.
 
-![](Model%20Photos/Heat254_KNNPred_StartDen.png)
+![](Model%20Photos/Prediction%20Heatmaps.png)
 
 ## Deployment Optimization Map
 
