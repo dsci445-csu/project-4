@@ -43,9 +43,9 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis Here\>
 
-![](Model%20Photos/00001c.png){width="217"}
+![](Model%20Photos/00001c.png){width="283"}
 
-\*Add more basic graphs to help readers understand our data yk\*
+![](Model Photos/Exploritory Segment.png){width="278"}
 
 ## Answering the Research Question
 
@@ -109,4 +109,6 @@ Models were fit under a 20 fold cross validation. Both models selected an epanec
 
 ## \<Conclusion Slide Here\>
 
-\*Can just wrap this up nicely, with this price here's how we predict spin's market to react\*
+-   Data collection isn't perfect
+
+-   
