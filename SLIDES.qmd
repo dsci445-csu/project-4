@@ -47,15 +47,15 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## Exploring Discount Zones
 
-![](Scooters/Discount Zones City.png){width="630"}
+![](Scooters/Discount%20Zones%20City.png){width="630"}
 
 ## Exploring Discount Zones
 
-![](Scooters/Discount Zones Campus.png){width="515"}
+![](Scooters/Discount%20Zones%20Campus.png){width="515"}
 
 ## Data Collection Issues
 
-![](Model Photos/Exploritory Segment.png){width="526"}
+![](Model%20Photos/Exploritory%20Segment.png){width="526"}
 
 ## Answering the Research Question
 
@@ -119,7 +119,6 @@ Models were fit under a 20 fold cross validation. Both models selected an epanec
 
 ## Moving Forward
 
--   Real data collection is far from perfect
 -   Create meaningful discount zone boundaries & forecast
+-   Geographical data Inaccuracies & data collection
 -   Present information to SPIN
--   Further collaboration
