@@ -117,6 +117,9 @@ Models were fit under a 20 fold cross validation. Both models selected an epanec
 
 ![](Model%20Photos/Heat267_Deploy_Start_Density.png){fig-align="center"}
 
-## Conclusion Slide Here
+## Moving Forward
 
--   Data collection isn't perfect
+-   Real data collection is far from perfect
+-   Create meaningful discount zone boundaries & forecast
+-   Present information to SPIN
+-   Further collaboration
