@@ -1,5 +1,5 @@
 ---
-title: "DSCI 445 Final Project"
+title: "SPIN Investigation & Collaboration"
 author: "Andrew H, Grace C, Nick H, Emily P "
 format: revealjs
 editor: visual
