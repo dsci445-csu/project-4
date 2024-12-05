@@ -214,12 +214,12 @@ join_data <- st_transform(join_data, crs = 4326)
 
 color_pal <- colorNumeric(
   palette = "viridis",
-  domain = c(0, 500000)
+  domain = range(join_data$Weighted_Average_Percentage, na.rm = TRUE)
 )
 
 a <- leaflet(join_data) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~color_pal(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Weighted_Average_Percentage),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -231,8 +231,9 @@ a <- leaflet(join_data) %>%
                ) %>%
   addLegend(position = "bottomright", 
             pal = color_pal, 
-            values = c(0, 500000), 
-            title = HTML("First Price Period<br>Total Matched Trips")
+            values = range(join_data$Weighted_Average_Percentage), 
+            title = HTML("First Price Period<br>Weighted Percentage of<br>Matched Trips"),
+            labFormat = labelFormat(suffix = "%")
             )
 a
 ```
@@ -241,7 +242,7 @@ join_data2 <- st_transform(join_data2, crs = 4326)
 
 b <- leaflet(join_data2) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~color_pal(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Weighted_Average_Percentage),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -253,8 +254,9 @@ b <- leaflet(join_data2) %>%
                ) %>%
   addLegend(position = "bottomright", 
             pal = color_pal, 
-            values = c(0, 500000), 
-            title = HTML("Second Price Period<br>Total Matched Trips")
+            values = range(join_data$Weighted_Average_Percentage),
+            title = HTML("Second Price Period<br>Weighted Percentage of<br>Matched Trips"),
+            labFormat = labelFormat(suffix = "%")
             )
 b
 ```
@@ -263,7 +265,7 @@ join_data3 <- st_transform(join_data3, crs = 4326)
 
 c <- leaflet(join_data3) %>%
   addProviderTiles("CartoDB.Positron") %>%
-  addPolylines(color = ~color_pal(Total_Matched_Trips),
+  addPolylines(color = ~color_pal(Weighted_Average_Percentage),
                weight = 2,
                opacity = 0.9,
                popup = ~paste("Street Name:", 
@@ -275,8 +277,9 @@ c <- leaflet(join_data3) %>%
                ) %>%
   addLegend(position = "bottomright", 
             pal = color_pal, 
-            values = c(0, 500000), 
-            title = HTML("Third Price Period<br>Total Matched Trips")
+            values = range(join_data$Weighted_Average_Percentage),
+            title = HTML("Third Price Period<br>Weighted Percentage of<br>Matched Trips"),
+            labFormat = labelFormat(suffix = "%")
             )
 c
 ```
@@ -430,15 +433,18 @@ model <- lm(Trips.By.Date...Starts...Spin...Scooters ~ Date +
 future_dates$lm_forecast <- predict(model, newdata = future_dates)
 
 ## Logistic Regression Model
-model2 <- glm(Trip_Occurred ~ Date + 
-              price, 
-              data = training_data,
-              family = binomial)
-future_dates$logistic_forecast <- predict(model2, newdata = future_dates, type = "response")
+# model2 <- glm(Trip_Occurred ~ Date + 
+#               price, 
+#               data = training_data,
+#               family = binomial)
+# future_dates$logistic_forecast <- predict(model2, newdata = future_dates, type = "response")
 
 ## ARIMA Model
-arima_model <- auto.arima(training_data$Trips.By.Date...Starts...Spin...Scooters)
-arima_forecast <- forecast(arima_model, h = nrow(future_dates))
+arima_model <- auto.arima(training_data$Trips.By.Date...Starts...Spin...Scooters,
+                          xreg = training_data$price)
+arima_forecast <- forecast(arima_model, 
+                           h = nrow(future_dates),
+                           xreg = future_dates$price)
 future_dates$arima_forecast <- as.numeric(arima_forecast$mean)
 
 ## ETS Model
