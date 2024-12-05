@@ -41,11 +41,21 @@ Our data was provided for by three different sources, and as such, there were a 
 -   Head of Government Partnership at Spin
 :::
 
-## Exploratory Analysis Here
+## Cost & Ridership
 
-![](Model%20Photos/00001c.png){width="283"}
+![](Model%20Photos/00001c.png){width="411"}
 
-![](Model%20Photos/Exploritory%20Segment.png){width="278"}
+## Exploring Discount Zones
+
+![](Scooters/Discount Zones City.png){width="630"}
+
+## Exploring Discount Zones
+
+![](Scooters/Discount Zones Campus.png){width="515"}
+
+## Data Collection Issues
+
+![](Model Photos/Exploritory Segment.png){width="526"}
 
 ## Answering the Research Question
 
