@@ -89,10 +89,11 @@ The graphs contain normalized data of roads/line segments in Fort Collins and th
 
 Wanted to examine this further, but ran into problems.
 
-## \<Mapping KNN Model Predictions\>
+## Mapping KNN Model Predictions
 
 ![](Model%20Photos/Heat254_KNNPred_StartDen.png)
-## \<Deployment Optimization Map \>
+
+## Deployment Optimization Map
 
 ![](Model%20Photos/Heat267_Deploy_Start_Density.png)
 
