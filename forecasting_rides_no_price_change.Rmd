@@ -40,6 +40,7 @@ Creating dfs for the price, number of daily bike trips, and the number of daily 
 
 ```{r}
 data_dir <- 'FOCO Spin Data'
+d2 <- 'FOCO Spin Data/Quartely Matched Trip Files'
 
 ## https://public.ridereport.com/fortcollins
 # df_daily_bike_trips <- data.frame(read.csv(file.path(data_dir,"bikes 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
@@ -52,37 +53,36 @@ data_dir <- 'FOCO Spin Data'
 df_daily_scooter_trips <- data.frame(read.csv(file.path(data_dir,"scooters 2021-07-26--2024-10-17-analyze-trips_by_date.csv")))
 
 ## data from July 2021 to December 2021
-df_matched_2021_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2021-Q3.csv")),
+df_matched_2021_q3 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2021-Q3.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2021_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2021-Q4.csv")),
+df_matched_2021_q4 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2021-Q4.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2022_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q1.csv")),
+df_matched_2022_q1 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2022-Q1.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2022_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q2.csv")),
+df_matched_2022_q2 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2022-Q2.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2022_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q3.csv")),
+df_matched_2022_q3 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2022-Q3.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2022_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2022-Q4.csv")),
+df_matched_2022_q4 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2022-Q4.csv")),
                          stringsAsFactors = FALSE)
 
 ## data from January 2023 to June 2024
-df_matched_2023_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q1.csv")),
+df_matched_2023_q1 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2023-Q1.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2023_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q2.csv")),
+df_matched_2023_q2 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2023-Q2.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2023_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q3.csv")),
+df_matched_2023_q3 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2023-Q3.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2023_q4 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2023-Q4.csv")),
+df_matched_2023_q4 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2023-Q4.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2024_q1 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q1.csv")),
+df_matched_2024_q1 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2024-Q1.csv")),
                          stringsAsFactors = FALSE)
-df_matched_2024_q2 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q2.csv")),
+df_matched_2024_q2 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2024-Q2.csv")),
                          stringsAsFactors = FALSE)
 
 ## data from July 2024 to September 2023
-df_matched_2024_q3 <- data.frame(read.csv(file.path(data_dir, "E_fortcollins-routes-data-for-scooter-in-2024-Q3.csv")),
+df_matched_2024_q3 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data-for-scooter-in-2024-Q3.csv")),
                          stringsAsFactors = FALSE)
-
 
 ```
 
