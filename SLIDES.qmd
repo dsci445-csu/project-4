@@ -1,5 +1,5 @@
 ---
-title: "SPIN Investigative Collaboration "
+title: "DSCI 445 Final Project"
 author: "Andrew H, Grace C, Nick H, Emily P "
 format: revealjs
 editor: visual
@@ -41,21 +41,11 @@ Our data was provided for by three different sources, and as such, there were a 
 -   Head of Government Partnership at Spin
 :::
 
-## Cost vs. Ridership
+## Exploratory Analysis Here
 
-![](Model%20Photos/00001c.png){width="381"}
+![](Model%20Photos/00001c.png){width="283"}
 
-## Understanding Discount Zones
-
-![](Scooters/Discount%20Zones%20City.png)
-
-## Understanding Discount Zones
-
-![](Scooters/Discount%20Zones%20Campus.png){width="473"}
-
-## Potential Collection Issues
-
-![](Model%20Photos/Exploritory%20Segment.png){width="399"}
+![](Model%20Photos/Exploritory%20Segment.png){width="278"}
 
 ## Answering the Research Question
 
@@ -101,24 +91,22 @@ Wanted to examine this further, but ran into problems.
 
 ## Raw Spatial Data Mapping
 
-![](Model%20Photos/points.png)
+![](Model%20Photos/points.png){fig-align="center"}
 
 ## Raw Spatial Density Heat Mapping
 
-![](Model%20Photos/Scooter_Heatmap_Density.png)
+![](Model%20Photos/Scooter_Heatmap_Density.png){fig-align="center"}
 
 ## Mapping KNN Model Predictions
 
 Models were fit under a 20 fold cross validation. Both models selected an epanechnikov kernel and best k = 15. The Deployment KNN model reported an MSE of 0.04891901 and the Start KNN model reported an MSE of 0. 04380498.
 
-![](Model%20Photos/Prediction%20Heatmaps.png)
+![](Model%20Photos/Prediction%20Heatmaps.png){fig-align="center"}
 
 ## Deployment Optimization Map
 
-![](Model%20Photos/Heat267_Deploy_Start_Density.png)
+![](Model%20Photos/Heat267_Deploy_Start_Density.png){fig-align="center"}
 
-## Moving Forward
+## Conclusion Slide Here
 
--   Create a meaningful discount zone and forecast on that
-
--   Present the information we do have to SPIN
+-   Data collection isn't perfect
