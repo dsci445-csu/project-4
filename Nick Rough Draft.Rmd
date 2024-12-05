@@ -256,7 +256,7 @@ deployment_knn_map <- foco_coord_map +
     option = "plasma",
     name = "Predicted\nDeployment\nDensity"
   ) +
-  ggtitle("KNN Predicted Deployment Density (k=25)") +
+  ggtitle("KNN Predicted Deployment Density") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
@@ -277,7 +277,7 @@ start_knn_map <- foco_coord_map +
     option = "plasma",
     name = "Predicted\nStart\nDensity"
   ) +
-  ggtitle("KNN Predicted Start Density (k=10)") +
+  ggtitle("KNN Predicted Start Density") +
   theme_minimal() +
   theme(plot.title = element_text(hjust = 0.5, face = "bold"))
 
