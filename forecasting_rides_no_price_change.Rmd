@@ -86,7 +86,7 @@ df_matched_2024_q3 <- data.frame(read.csv(file.path(d2, "fortcollins-routes-data
 
 ```
 
-```{r}
+```{r, fig.width=14, fig.height=6}
 price_change_1 <- as.Date("2021-07-26")
 price_change_2 <- as.Date("2022-12-01")
 price_change_3 <- as.Date("2024-07-01")
@@ -104,15 +104,15 @@ plot_scooter_rides_daily <- ggplot(data = df_daily_scooter_trips,
   geom_vline(xintercept = price_change_3, color = "blue") +
   annotate("text", x = as.Date("2021-07-26"), 
            y = max(daily_trips, na.rm = TRUE),
-           label = "Initial Price\n(0.30 $/hr)\nJuly 26, 2021", 
+           label = "Initial Price\n(0.30 $/min)\nJuly 26, 2021", 
            angle = 0, hjust = -0.1, size = 2) +
   annotate("text", x = as.Date("2022-12-01"), 
            y = max(daily_trips, na.rm = TRUE),
-           label = "First Price\nChange (0.40 $/hr)\nDec 1, 2022", 
+           label = "First Price\nChange (0.40 $/min)\nDec 1, 2022", 
            angle = 0, hjust = -0.1, size = 2) +
   annotate("text", x = as.Date("2024-07-01"), 
            y = max(daily_trips, na.rm = TRUE),
-           label = "Second Price\nChange\nJuly 1, 2024", 
+           label = "Second Price\nChange (0.40 $/min,\n0.30 $/min on campus)\nJuly 1, 2024", 
            angle = 0, hjust = -0.1, size = 2) +
   labs(x = "Date",
        y = "Rides",
@@ -160,7 +160,7 @@ df_p3 <- data_list[[3]]
 
 # head(df_p1)
 
-foco <- st_read("~/GitHub/D445_Project/Street_Centerlines")
+foco <- st_read("~/GitHub/D445_Project/FOCO Spin Data/Street_Centerlines")
 
 # head(foco)
 
