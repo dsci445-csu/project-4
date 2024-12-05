@@ -7,7 +7,7 @@ editor: visual
 
 ## Spin E-Scooters!
 
-![](Scooters/Untitledupdated.png){fig-align="center"}
+![](Scooters/Untitledupdated.png)
 
 ## Research Question
 
@@ -43,7 +43,7 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis Here\>
 
-![](Model Photos/emily1.png){fig-align="center"}
+![](Model%20Photos/00001c.png){width="217"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
@@ -83,19 +83,29 @@ The data for the actual number of rides ends October 17th 2024, so there isn't a
 
 Matched Rides Per Price Period
 
-![](Model Photos/emily2.png){fig-align="center"}
+![](Model%20Photos/longboy.png){fig-align="center"}
 
 The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
 
 Wanted to examine this further, but ran into problems.
 
+## Raw Spatial Data Mapping
+
+![](Model%20Photos/Start-Dens-Points.png)
+
+## Raw Spatial Density Heatmapping
+
+![](Model%20Photos/points.png)
+
 ## Mapping KNN Model Predictions
 
-![](Model%20Photos/Heat254_KNNPred_StartDen.png){fig-align="center"}
+Models were fit under a 20 fold cross validation. Both models selected an epanechnikov kernel and best k = 15. The Deployment KNN model reported an MSE of 0.04891901 and the Start KNN model reported an MSE of 0. 04380498.
+
+![](Model%20Photos/Heat254_KNNPred_StartDen.png)
 
 ## Deployment Optimization Map
 
-![](Model%20Photos/Heat267_Deploy_Start_Density.png){fig-align="center"}
+![](Model%20Photos/Heat267_Deploy_Start_Density.png)
 
 ## \<Conclusion Slide Here\>
 
