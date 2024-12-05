@@ -1,5 +1,5 @@
 ---
-title: "DSCI 445 Final Project"
+title: "SPIN Investigative Collaboration "
 author: "Andrew H, Grace C, Nick H, Emily P "
 format: revealjs
 editor: visual
@@ -41,11 +41,21 @@ Our data was provided for by three different sources, and as such, there were a 
 -   Head of Government Partnership at Spin
 :::
 
-## \<Exploratory Analysis Here\>
+## Cost vs. Ridership
 
-![](Model%20Photos/00001c.png){width="283"}
+![](Model%20Photos/00001c.png){width="381"}
 
-![](Model Photos/Exploritory Segment.png){width="278"}
+## Understanding Discount Zones
+
+![](Scooters/Discount%20Zones%20City.png)
+
+## Understanding Discount Zones
+
+![](Scooters/Discount%20Zones%20Campus.png){width="473"}
+
+## Potential Collection Issues
+
+![](Model%20Photos/Exploritory%20Segment.png){width="399"}
 
 ## Answering the Research Question
 
@@ -107,8 +117,8 @@ Models were fit under a 20 fold cross validation. Both models selected an epanec
 
 ![](Model%20Photos/Heat267_Deploy_Start_Density.png)
 
-## \<Conclusion Slide Here\>
+## Moving Forward
 
--   Data collection isn't perfect
+-   Create a meaningful discount zone and forecast on that
 
--   
+-   Present the information we do have to SPIN
