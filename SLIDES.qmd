@@ -41,11 +41,11 @@ Our data was provided for by three different sources, and as such, there were a 
 -   Head of Government Partnership at Spin
 :::
 
-## \<Exploratory Analysis Here\>
+## Exploratory Analysis Here
 
 ![](Model%20Photos/00001c.png){width="283"}
 
-![](Model Photos/Exploritory Segment.png){width="278"}
+![](Model%20Photos/Exploritory%20Segment.png){width="278"}
 
 ## Answering the Research Question
 
@@ -91,24 +91,22 @@ Wanted to examine this further, but ran into problems.
 
 ## Raw Spatial Data Mapping
 
-![](Model%20Photos/points.png)
+![](Model%20Photos/points.png){fig-align="center"}
 
 ## Raw Spatial Density Heat Mapping
 
-![](Model%20Photos/Scooter_Heatmap_Density.png)
+![](Model%20Photos/Scooter_Heatmap_Density.png){fig-align="center"}
 
 ## Mapping KNN Model Predictions
 
 Models were fit under a 20 fold cross validation. Both models selected an epanechnikov kernel and best k = 15. The Deployment KNN model reported an MSE of 0.04891901 and the Start KNN model reported an MSE of 0. 04380498.
 
-![](Model%20Photos/Prediction%20Heatmaps.png)
+![](Model%20Photos/Prediction%20Heatmaps.png){fig-align="center"}
 
 ## Deployment Optimization Map
 
-![](Model%20Photos/Heat267_Deploy_Start_Density.png)
+![](Model%20Photos/Heat267_Deploy_Start_Density.png){fig-align="center"}
 
-## \<Conclusion Slide Here\>
+## Conclusion Slide Here
 
 -   Data collection isn't perfect
-
--   
