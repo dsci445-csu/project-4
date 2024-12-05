@@ -7,7 +7,7 @@ editor: visual
 
 ## Spin E-Scooters
 
-![](images/Untitled33.png){fig-align="center"}
+![](Scooters/Untitled33.png)
 
 ## Research Question
 
@@ -43,7 +43,7 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis\>
 
-![](images/00001c.png){width="242"}
+![](Model Photos/00001c.png){width="217"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
@@ -63,26 +63,20 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ![](Model%20Photos/grace_pic4.png)
 
+## Predicting Future Rides without Price Period 3
+
+The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
+
 ## Matched Rides Per Price Period
 
-![](images/longboy.png){fig-align="center"}
+![](Model Photos/longboy.png)
 
 The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
 
 Wanted to examine this further, but ran into problems.
-
-## Predicting Future Rides without Price Period 3
-
-![](images/hehemeep.png){fig-align="center" width="342"}
-
-The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
 ## \<Nick's Prediction Slides\>
 
 ## \<Conclusion Slide\>
 
 \*Can just wrap this up nicely, with this price here's how we predict spin's market to react\*
-
-## Hello
-
-fewhiufweebiuw
