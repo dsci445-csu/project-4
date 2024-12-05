@@ -5,9 +5,9 @@ format: revealjs
 editor: visual
 ---
 
-## Spin E-Scooters
+## Spin E-Scooters!
 
-![](Scooters/Untitled33.png)
+![](Scooters/Untitledupdated.png)
 
 ## Research Question
 
@@ -41,35 +41,47 @@ Our data was provided for by three different sources, and as such, there were a 
 -   Head of Government Partnership at Spin
 :::
 
-## \<Exploratory Analysis\>
+## \<Exploratory Analysis Here\>
 
 ![](Model%20Photos/00001c.png){width="217"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
-## Weekly Models
+## Answering the Research Question
+
+Weekly Models
 
 ![](Model%20Photos/grace_pic1.png){fig-align="center"}
 
-## Weekly Forecasting
+## Answering the Research Question
+
+Weekly Forecasting
 
 ![](Model%20Photos/grace_pic2.png){fig-align="center"}
 
-## Monthly Models
+## Answering the Research Question
+
+Monthly Models
 
 ![](Model%20Photos/grace_pic3.png){fig-align="center"}
 
-## Monthly Forecasting
+## Answering the Research Question
+
+Monthly Forecasting
 
 ![](Model%20Photos/grace_pic4.png){fig-align="center"}
 
-## Predicting Future Rides without Price Period 3
+## Building off the Research Question
+
+Predicting Future Rides Without Price Point 3
 
 ![](Model Photos/hehemeep.png){fig-align="center" width="284"}
 
 The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
-## Matched Rides Per Price Period
+## Building off the Research Question
+
+Matched Rides Per Price Period
 
 ![](Model%20Photos/longboy.png){fig-align="center"}
 
@@ -77,8 +89,8 @@ The graphs contain normalized data of roads/line segments in Fort Collins and th
 
 Wanted to examine this further, but ran into problems.
 
-## \<Nick's Prediction Slides\>
+## \<Nick's Prediction Slides Here\>
 
-## \<Conclusion Slide\>
+## \<Conclusion Slide Here\>
 
 \*Can just wrap this up nicely, with this price here's how we predict spin's market to react\*
