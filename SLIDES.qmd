@@ -43,33 +43,35 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis\>
 
-![](Model Photos/00001c.png){width="217"}
+![](Model%20Photos/00001c.png){width="217"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
 ## Weekly Models
 
-![](Model%20Photos/grace_pic1.png)
+![](Model%20Photos/grace_pic1.png){fig-align="center"}
 
 ## Weekly Forecasting
 
-![](Model%20Photos/grace_pic2.png)
+![](Model%20Photos/grace_pic2.png){fig-align="center"}
 
 ## Monthly Models
 
-![](Model%20Photos/grace_pic3.png)
+![](Model%20Photos/grace_pic3.png){fig-align="center"}
 
 ## Monthly Forecasting
 
-![](Model%20Photos/grace_pic4.png)
+![](Model%20Photos/grace_pic4.png){fig-align="center"}
 
 ## Predicting Future Rides without Price Period 3
+
+![](Model Photos/hehemeep.png){fig-align="center" width="284"}
 
 The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
 ## Matched Rides Per Price Period
 
-![](Model Photos/longboy.png)
+![](Model%20Photos/longboy.png){fig-align="center"}
 
 The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
 
