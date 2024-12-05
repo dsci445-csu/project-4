@@ -113,20 +113,24 @@ start_dens_heatmap + start_map + plot_layout(ncol = 2, guides = 'collect')
 
 
 ```{r dpl maps, echo = FALSE}
-deployment_points <- foco_coord_map + geom_point(data = clean_dpl_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank())
+deployment_points <- foco_coord_map + geom_point(data = clean_dpl_scoot, aes(x = longitude, y = latitude), alpha = 0.15, size = 0.8, color = 'orange') + theme(panel.grid = element_blank()) + ggtitle('Deployment Points')
   
 deployment_map <- foco_coord_map + stat_density2d(data = clean_dpl_scoot,  aes(x = longitude, y = latitude, fill = after_stat(level)), geom = "polygon", contour = TRUE, bins = 750,h = c(0.012, 0.012)) +
   scale_fill_gradientn(colors = rev(brewer.pal(9, 'PuOr')), name = 'Deployment\nDensity') + 
   theme(panel.grid = element_blank()) + 
   ggtitle("Scooter Deployment Density")
 
-deployment_points + deployment_map + plot_layout(ncol = 2, guides = 'collect')
+ deployment_map + deployment_points + plot_layout(ncol = 2, guides = 'collect')
 ```
 
 ## Raw Trip Start Data Points vs Density {.flexbox .vcenter}
 
 
 	Trip densities for Deployment densities are distributed gradually across the cities with more clustered hotspots more concentrated around the CSU campus and Oldtown areas. Start densities show similar patterns, but general densities are centered closer to the central town areas.
+	
+```{r}
+start_map + deployment_points + plot_layout(ncol = 2, guides = 'collect')
+```
 
 ```{r dpl-&-start, echo = FALSE}
 deployment_map + start_dens_heatmap  + 
