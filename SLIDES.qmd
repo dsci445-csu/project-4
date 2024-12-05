@@ -7,7 +7,7 @@ editor: visual
 
 ## Spin E-Scooters!
 
-![](Scooters/Untitledupdated.png)
+![](Scooters/Untitledupdated.png){fig-align="center"}
 
 ## Research Question
 
@@ -43,7 +43,7 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## \<Exploratory Analysis Here\>
 
-![](Model%20Photos/00001c.png){width="217"}
+![](Model Photos/emily1.png){fig-align="center"}
 
 \*Add more basic graphs to help readers understand our data yk\*
 
@@ -83,7 +83,7 @@ The data for the actual number of rides ends October 17th 2024, so there isn't a
 
 Matched Rides Per Price Period
 
-![](Model%20Photos/longboy.png){fig-align="center"}
+![](Model Photos/emily2.png){fig-align="center"}
 
 The graphs contain normalized data of roads/line segments in Fort Collins and the count of matched trips taken over that price period.
 
@@ -91,11 +91,11 @@ Wanted to examine this further, but ran into problems.
 
 ## Mapping KNN Model Predictions
 
-![](Model%20Photos/Heat254_KNNPred_StartDen.png)
+![](Model%20Photos/Heat254_KNNPred_StartDen.png){fig-align="center"}
 
 ## Deployment Optimization Map
 
-![](Model%20Photos/Heat267_Deploy_Start_Density.png)
+![](Model%20Photos/Heat267_Deploy_Start_Density.png){fig-align="center"}
 
 ## \<Conclusion Slide Here\>
 
