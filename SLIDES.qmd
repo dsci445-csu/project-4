@@ -11,11 +11,11 @@ editor: visual
 
 ## Research Question
 
-Grace's Research Question
+This research examines the declining performance of Spin scooters in Fort Collins through a multi-faceted analysis of ridership patterns, pricing impacts, and deployment efficiency.
 
--   Emily's Research Question
+We use forecasting models to analyze ride frequency trends, coupled with counterfactual analysis of Q2 price changes, and KNN-based spatial distribution modeling.
 
--   Nick's Research Question
+Our findings predict a negative trend in scooter rides, and suggests opportunities for optimizing both pricing strategy and scooter deployment to better align with Fort Collins' usage patterns.
 
 ## Examining the Data
 
@@ -75,7 +75,7 @@ Monthly Forecasting
 
 Predicting Future Rides Without Price Point 3
 
-![](Model Photos/hehemeep.png){fig-align="center" width="284"}
+![](Model%20Photos/hehemeep.png){fig-align="center" width="284"}
 
 The data for the actual number of rides ends October 17th 2024, so there isn't a lot to compare.
 
