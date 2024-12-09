@@ -11,5 +11,7 @@ Run "Lib_Installer_Loader.R" in project-4 in order to install and load all requi
 
 #### Step 3: Reproducing Heat Mapping
 
-1. Under project-4, open "FoCo_HeatMapping.Rmd"
-2. 
+1. Under project-4, open "Spatial Data Mapping & Predictions.Rmd"
+2. Select preferred viewing style (Visual or Source)
+3. Run All
+4. View Output/Results
