@@ -43,7 +43,7 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## Cost & Ridership
 
-![](Model Photos/emily1.png){fig-align="center"}
+![](Model%20Photos/emily1.png){fig-align="center"}
 
 ## Exploring Discount Zones
 
