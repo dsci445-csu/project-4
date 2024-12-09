@@ -19,7 +19,28 @@ Fort Collins is widely considered one of most commuter friendly cities. As the p
 
 ## Methods
 
-Using the “Date” column, we created month, year, and week number columns. We used separate data frames for weekly and monthly data. In each of these data frames, we grouped by the time frame of interest to get the sum of scooter rides in each interval. We then created two new columns for the normal and college prices. In both analyses data from 2024 was used as testing data, and previous data was used as the training data in the form of a time series. The accuracy of the models in both analyses was measured using the mean absolute percentage error (MAPE). In both analyses, several models were tested, but only the most accurate models will be included in this paper. The college price decrease initiated in July 2024 caused a huge spike in ridership that was not captured by most models. Thus, in both analyses, the final model is a combination of two models: one that was accurate before the price change and one that was accurate after the price change.
+Using the “Date” column, we created month, year, and week number columns. We used separate data frames for weekly and monthly data. In each of these data frames, we grouped by the time frame of interest to get the sum of scooter rides in each interval. We then created two new columns for the normal and college prices. 
+
+To forecast future ridership, a time series analysis was performed. In both analyses data from 2024 was used as testing data, and previous data was used as the training data in the form of a time series. The accuracy of the models in both analyses was measured using the mean absolute percentage error (MAPE). It is the average magnitude of error produced by a model; in other words, it measures “the average absolute percentage difference between the predictions and the actuals” (Roberts). This is a commonly used measurement for accuracy in time series analyses because of its simplicity and interpretability (Roberts). For our analysis, it allowed us to compare the errors in the weekly and monthly forecasts on a comparable scale. Only the most accurate models (meaning those with the lowest MAPE values) are included in this paper.
+
+The forecast package in R has many functions for time series forecasting, including those for STLF and ARIMA methods. The forecastHybrid package in R allows several kinds of time series forecasting methods to be combined. The options are ARIMA, STLM, TBATS, NNETAR, ETS, and THETAM. Models created using this package were created in both the weekly and monthly forecasts, and they are referred to as hybrid models and the methods used are specified.
+
+In both analyses, several models generated from time series forecasting methods were tested. One of these models was an STLF model. STLF (Seasonal and Trend Decomposition using LOESS Forecasting) decomposes the time series into trend, seasonal, and residual components using STL (Seasonal and Trend Decomposition using LOESS) (Andrés & Andrés). It generates a forecast by deseasonalizing the time series data by subtracting the seasonal component, applying a non-seasonal forecasting method (e.g., ARIMA or ETS) to the deseasonalized data, and reseasonalizing the forecasts by adding back the last year of the estimated seasonal component (Andrés & Andrés). This method is resistant to outliers, so these observations don’t significantly affect estimates (Andrés & Andrés).
+
+Autoregressive integrated moving average (ARIMA) is a type of time series analysis used for understanding historical data and predicting future values (Wikipedia contributors). Autoregressive (AR) means “that the evolving variable of interest is regressed on its prior values” (Wikipedia contributors). Moving average (MA) means “that the regression error is a linear combination of error terms whose values occurred contemporaneously and at various times in the past” (Wikipedia contributors). Integrated (I) means “that the data values have been replaced with the difference between each value and the previous value” (Wikipedia contributors). ARIMA models are good at capturing seasonality, cycles, or trends (Pathan & M.), which was fitting for our data since there was clear seasonality in ridership.
+
+Like STLF, the STLM model is a part of the STL (Seasonal and Trend decomposition using LOESS) framework. STLM (Seasonal and Trend Decomposition using LOESS Modeling) uses the same STL decomposition as the STLF method (R: Forecasting using stl objects). However, the STLM method focused on decomposition and modeling of the seasonally adjusted data while STLF combines decomposition, modeling, and forecasting into one step. This means the STLM method provides more control over the modeling process (R: Forecasting using stl objects).
+
+TBATS (Trigonometric seasonality, Box-Cox transformation, ARIMA errors, Trend, and Seasonal components) can accommodate non-linear trends in data, which makes it suitable for data with complex trend patterns and means the model is highly flexible. This is fitting for our data since we believed the price changes affected trend patterns. (Ellis).
+
+Neural Network AutoRegression (NNETAR) can also capture complex non-linear trends. It typically trains multiple networks and combines their forecasts, which can improve prediction accuracy and stability (12.4 Neural network models). It handles seasonality by automatically selecting optimal seasonal and non-seasonal lags based on AIC (12.4 Neural network models).
+
+ETS (Error, Trend, Seasonality) models decompose timer series into three key components. Error can be Additive (A) or Multiplicative (M). Trend can be None (N), Additive (A), Additive dampend (Ad), Multiplicative (M) or Multiplicative dampend (Md). Seasonality can be None (N), Additive (A), or Multiplicative (M). This framework allows for flexibility in the combination of these components (Svetunkov). ETS generates forecasts by decomposing the time series into its components, extrapolating each component into the future, and recombining the components to produce the final forecast (7.7 Forecasting with ETS models). ETS can capture complex seasonal patterns, including seasonality and trends that change over time.
+
+THETAM, a variation of the Theta method, is another flexible model that is good at capturing complex seasonalities and changes in trends. It is “based on the decomposition of the time series into three components: trend, seasonality and noise. The model then forecasts the long-term trend and seasonality, and uses the noise to adjust the short-term forecasts” (Castellon). It is often more accurate than other methods, particularly with complex trends and seasonality (Castellon).
+
+In both analyses, several models were tested, but only the most accurate models will be included in this paper. The college price decrease initiated in July 2024 caused a huge spike in ridership that was not captured by most models. Thus, in both analyses, the final model is a combination of two models: one that was accurate before the price change and one that was accurate after the price change. Both forecasts use the latter since the forecasts occur after the price change. 
+
 
 [**Weekly Rides**]{.underline}
 
@@ -27,7 +48,7 @@ Before the price change, a hybrid model composed of an ARIMA, STLM, and THETAM m
 
 ![](Model%20Photos/135_AFS_WeeklyRides.png)
 
-An STLF model most accurately captured the spike in ridership when fit on the testing data, with an overall MAPE of 47.12.
+An STLF model most accurately captured the spike (based on visually comparing the forecast graphs) in ridership when fit on the testing data, with an overall MAPE of 47.12. 
 
 ![](Model%20Photos/110_STLF_Weekly.png)
 
@@ -73,7 +94,7 @@ In 2025, the week with the lowest ridership (around 122) will be the first week 
 
 [**Monthly**]{.underline}
 
-Since the boosting model is used for predicting after the price change, this model was used to predict ridership through the end of 2025. The plot is shown below, beginning at the end of the testing data. \\\*Note: this will not track a trend, will now produce the same predictions for each January, February, etc.
+Since the boosting model is used for predicting after the price change, this model was used to predict ridership through the end of 2025. The plot is shown below, beginning at the end of the testing data. However, since this model does not incorporate a way to track a trend, it will make the same predictions for each individual month in the future (i.e., all January predictions will be the same).
 
 ![](Model%20Photos/311_Forecast_M2025.png)
 
@@ -92,3 +113,15 @@ Compared side by side, the two models bear a strong resemblance to each other wi
 This map highlights where SPIN can improve their deployment strategies. Smooth transitions between colors on the map represent gradual changes in the relationship between deployment and usage patterns, which helps understand not only which areas to make changes, but just how significant those changes should be.
 
 The model is less effective reaching toward the outer bounds of the service area in the data. As it reaches the outer bounds an edge effect takes hold and spreads the last noticed pattern past the service area of the data into spaces where no scooters are used.
+
+## Works Cited
+7.7 Forecasting with ETS models | Forecasting: Principles and Practice (2nd ed). (n.d.). https://otexts.com/fpp2/ets-forecasting.html
+12.4 Neural network models | Forecasting: Principles and Practice (3rd ed). (n.d.). https://otexts.com/fpp3/nnetar.html
+Andrés, D., & Andrés, D. (2024, January 5). Time Series Forecasting with STL - ML Pills. ML Pills - Machine Learning Pills. https://mlpills.dev/time-series/time-series-forecasting-with-stl/
+Castellon, N. (n.d.). Optimized Theta Model. NIXTLA. https://nixtlaverse.nixtla.io/statsforecast/docs/models/optimizedtheta.html
+Ellis, C. (2023, July 2). When to use TBATS - Crunching the Data. Crunching the Data. https://crunchingthedata.com/when-to-use-tbats/
+Pathan, A., & M., N. (2023, September 1). What are the advantages and disadvantages of using ARIMA models for forecasting? https://www.linkedin.com/advice/0/what-advantages-disadvantages-using-arima
+R: Forecasting using stl objects. (n.d.). https://search.r-project.org/CRAN/refmans/forecast/html/forecast.stl.html
+Roberts, A. (2023, February 10). Mean Absolute percentage error (MAPE): what you need to know. Arize AI. https://arize.com/blog-course/mean-absolute-percentage-error-mape-what-you-need-to-know/
+Svetunkov, I. (2024, November 29). 4.1 ETS taxonomy | Forecasting and Analytics with the Augmented Dynamic Adaptive Model (ADAM). https://openforecast.org/adam/ETSTaxonomy.html
+Wikipedia contributors. (2024, October 9). Autoregressive integrated moving average. Wikipedia. https://en.wikipedia.org/wiki/Autoregressive_integrated_moving_average

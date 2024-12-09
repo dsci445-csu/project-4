@@ -1,13 +1,13 @@
 ---
 title: "SPIN Investigation & Collaboration"
-author: "Andrew H, Grace C, Nick H, Emily P "
+author: "Andrew H, Grace C, Nick H, Emily P"
 format: revealjs
 editor: visual
 ---
 
 ## Spin E-Scooters!
 
-![](Scooters/Untitledupdated.png)
+![](Scooters/Untitledupdated.png){fig-align="center"}
 
 ## Research Question
 
@@ -43,19 +43,19 @@ Our data was provided for by three different sources, and as such, there were a 
 
 ## Cost & Ridership
 
-![](Model%20Photos/00001c.png){width="411"}
+![](Model Photos/emily1.png){fig-align="center"}
 
 ## Exploring Discount Zones
 
-![](Scooters/Discount%20Zones%20City.png){width="630"}
+![](Scooters/Discount%20Zones%20City.png){fig-align="center" width="630"}
 
 ## Exploring Discount Zones
 
-![](Scooters/Discount%20Zones%20Campus.png){width="515"}
+![](Scooters/Discount%20Zones%20Campus.png){fig-align="center" width="515"}
 
 ## Data Collection Issues
 
-![](Model%20Photos/Exploritory%20Segment.png){width="526"}
+![](Model%20Photos/Exploritory%20Segment.png){fig-align="center" width="526"}
 
 ## Answering the Research Question
 
