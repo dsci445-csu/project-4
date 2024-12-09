@@ -299,6 +299,7 @@ comparison <- grid_pts |>
 
 foco_coord_map + geom_tile(data = comparison, aes(x=longitude, y = latitude, fill = difference), alpha = .8) + scale_fill_gradient2(low='red',mid='white', high='green', name = 'Deployment vs\nStart Density') + coord_fixed() + theme_minimal()
 ```
+
 ## Interpretations & Conclusions
 
 The map is showing over-served deployment areas on CSU campus, CSU Hospital, Alta Vista/East Old Town, and areas around 'Spring Park.' (While there is an edge effect on the outskirts of town, that dense red cluster NE near I-25 is very interesting and should be looked into closer.) Nearby areas that could serve to have more deployments such as the NW Downtown area by Old Town Hair Company, Old Town Library, Prospect Ponds, and Harmony park areas are close-by to some of these over-served zones and the implementation of moving 1-2 scooters should be straight-forward. It would be worth zooming in on areas with distinct color changes in meaningful areas to produce model predictions of deployment/start densities in those specific spots to see if there will be a more accurate and meaningful interpretations of scooter patterns to make better deployment adjustments.
