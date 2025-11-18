@@ -6,5 +6,5 @@ output: html_document
 ---
 ```{r}
 print("Push test for exploratory analysis")
-
+install.packages(c("usethis", "gitcreds"))
 ```
