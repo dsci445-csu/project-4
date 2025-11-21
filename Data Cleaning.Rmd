@@ -1,0 +1,36 @@
+---
+title: "Data Cleaning"
+author: "Dawson Carney"
+date: "2025-11-19"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Match dates in alkalinity and hardness data
+alk <- read.csv("RWAR_alkalinity.csv")
+hardness <- read.csv("RWAR_hardness.csv")
+
+# split DateStamp into day and time
+alk_new <- separate(alk, col = DateStamp, into = c("Date", "Time"), sep = " ") |>
+  select(-c("Time")) |>
+  rename(alkalinity = Alkalinity..mg.L)
+hardness_new <- separate(hardness, col = DateStamp, into = c("Date", "Time"), sep = " ") |>
+  select(-c("Time")) |>
+  rename(hardness = Hardness..mg.L)
+
+# merge by Date
+merged <- merge(alk_new, hardness_new, by="Date")
+
+merged
+
+```
+
