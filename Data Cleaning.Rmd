@@ -9,7 +9,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Alkalinity and Hardness Data
 
 ```{r}
 library(dplyr)
@@ -33,4 +33,5 @@ merged <- merge(alk_new, hardness_new, by="Date")
 merged
 
 ```
+
 
