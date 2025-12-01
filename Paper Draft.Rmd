@@ -11,6 +11,85 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
+### Background and Motivation
+
+[Background on Drinking Water Treatment/Process Overview]
+
+Many different factors indicate effective chemical dose performance. Examples could include:
+
+* chemical information about the water such as turbidity, charge, or pH
+* information on the size of the particles being formed in the flocculation process (found via running tests on water samples)
+* observation of filter performance at the end of the process
+* total chemical byproducts produced
+* output water quality
+
+
+The chemical processes that determine treatment process performance are complex
+and highly interconnected, therefore all of these factors and more are important
+in making effective decisions about chemical dosing.  
+
+***The role of an operator in deciding water treatment plant chemical doses is to
+look at a wide array of these factors and make decisions about how to adjust
+chemical doses.***  
+
+Treatment plant conditions can change rapidly, so having tools
+that aid in selecting chemical doses in response to changing water quality is 
+crucial for operators. These chemicals are one of the primary costs of the treatment 
+process, costing millions of dollars per year for a mid-size treatment plant. 
+The chemical byproducts produced by excessive coagulant doses also have environmental
+impacts. Therefore, this is both a financial problem impacting taxpayers, and an
+environmental one.
+
+### Project Purpose
+***The goal of this project is to produce a model that serves the role of a 
+treatment plant operator.*** This model would provide recommended chemical doses,
+based on input water quality characteristics, and how operators have dosed 
+chemicals in the past. This could prove a useful tool to operators as a "starting
+point" in chemical dosing. They could see a change in water quality, retrieve
+the suggested chemical dose from the model, test this dose, and adjust from there
+based on other information.
+
+## Data Overview and Cleaning
+
+The data used for this effort is a timeseries dataset from a Colorado water treatment
+plant covering XX years. This treatment plant takes its water from a reservoir, which
+tends to be a more stable water source than sources such as rivers or industrial supplies.  
+  
+The available data are as follows, with missing date ranges noted:
+
+* Raw Water Data
+    + pH
+    + Temperature
+    + Turbidity
+    + Suspended Grain Size Information
+    + Alkalinity
+    + Hardness
+
+* Chemical Dosing Data
+    + Coagulant Dose
+    + Cationic Polymer Dose
+
+
+## Exploratory Analysis
+
+## Predictor Selection
+
+## Modeling
+
+### Linear Regression
+
+### [Other Models]
+
+### Tree-Based Models
+The benefit of a tree-based model in this application is that it is easily interpretable.
+It could serve as a decision-making tool for a treatment plant operator:
+
+* The operator sees a change in raw water conditions
+* Obtains a recommended dose based on the decision tree
+* Easily interprets the "why" of the dosing recommendation by following the logic of the decision tree
+* Understands which variables were most important in deciding on a dose
+
+
 
 
 
