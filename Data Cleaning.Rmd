@@ -30,7 +30,21 @@ hardness_new <- separate(hardness, col = DateStamp, into = c("Date", "Time"), se
 # merge by Date
 merged <- merge(alk_new, hardness_new, by="Date")
 
-merged
+summary(merged) # Both alkalinity and hardness have zero-values (no data)
+
+merged_clean1 <- merged[(merged$alkalinity != 0) & (merged$hardness != 0),] # remove
+
+summary(merged_clean1) # no zero values, still a very large alkalinity value
+
+tail(sort(merged_clean1$alkalinity)) # two significant outliers (equipment likely)
+
+merged_clean2 <- merged[merged$alkalinity < 876, ] # remove outliers
+
+summary(merged_clean2) # successfully removed zero values and outliers
+
+
+
+
 
 ```
 
