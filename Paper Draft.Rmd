@@ -1,0 +1,16 @@
+---
+title: "Predictive Modeling of Drinking Water Treatment Process Chemical Doses"
+author: "Dawson Carney, Reece Carmody, Ethan Schilling, Joshua Tobey"
+date: "5 December 2025"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+
+
+
