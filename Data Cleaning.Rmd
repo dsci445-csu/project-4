@@ -42,10 +42,109 @@ merged_clean2 <- merged[merged$alkalinity < 876, ] # remove outliers
 
 summary(merged_clean2) # successfully removed zero values and outliers
 
+```
+
+```{r}
+# output merged data to CSV (run after processing)
+
+library(readr)
+write_csv(merged_clean2, "alkalinity_hardness_cleaned.csv")
+
+```
+
+## Raw Water Data
+
+```{r}
+
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
 
 
+## Import data, convert timestamp
+rwar <- read.csv("RWAR_turb_cond_counts_pH_temp.csv")
+rwar2 <- rwar |> mutate(DateTime = mdy_hm(rwar$Timestamp))
+summary(rwar2)
 
 
+## Temperature Data
+# Plot
+ggplot(rwar2) + geom_point(aes(x=DateTime, y=Temperature..deg.C))
+# Find region of approx. zero temperature (outliers), set to NA
+# Interpolate between nearest non-NA temperatures where temp is NA
+rwar2_temp <- rwar2 |>
+  select(c("DateTime", Temperature..deg.C)) |>
+  mutate(temp_cleaned = ifelse(Temperature..deg.C < 1, NA, Temperature..deg.C)) |>
+  mutate(temp_interp = na.approx(temp_cleaned, na.rm = FALSE))
+# Average by day
+rwar2_temp_daily <- rwar2_temp |>
+  mutate(Day=date(DateTime)) |>
+  group_by(Day) |>
+  summarise(mean_Temp = mean(temp_interp))
+ggplot(rwar2_temp_daily) + geom_point(aes(x=Day, y=mean_Temp))
+
+
+## pH Data
+# Plot
+ggplot(rwar2) + geom_point(aes(x=DateTime, y=pH..SU))
+# Does not seem like there are huge outliers, so average by day
+rwar2_pH_daily <- rwar2 |>
+  select(c("DateTime", pH..SU)) |>
+  mutate(Day=date(DateTime)) |>
+  group_by(Day) |>
+  summarise(mean_pH = mean(pH..SU))
+ggplot(rwar2_pH_daily) + geom_point(aes(x=Day, y=mean_pH))
+
+
+## Conductivity Data
+# Plot
+ggplot(rwar2) + geom_point(aes(x=DateTime, y=Conductivity..mS.cm.1))
+# Remove obvious outliers (only a few measurements; does not remove full days)
+rwar2_cond <- rwar2 |> 
+  select(c("DateTime", Conductivity..mS.cm.1)) |>
+  filter(Conductivity..mS.cm.1 < 2 & Conductivity..mS.cm.1 > 0.2)
+ggplot(rwar2_cond) + geom_point(aes(x=DateTime, y=Conductivity..mS.cm.1))
+# Average by Day
+rwar2_cond_daily <- rwar2_cond |>
+  mutate(Day=date(DateTime)) |>
+  group_by(Day) |>
+  summarise(mean_Conductivity = mean(Conductivity..mS.cm.1))
+ggplot(rwar2_cond_daily) + geom_point(aes(x=Day, y=mean_Conductivity))
+
+
+## Turbidity Data
+# Plot
+ggplot(rwar2) + geom_point(aes(x=DateTime, y=Turbidity..NTU))
+# Remove obvious outliers (only a few measurements; does not remove full days)
+# Main obvious outliers are in mid 2019 and 2020, and are all above 7 NTU
+rwar2_turb <- rwar2 |> 
+  select(c("DateTime", Turbidity..NTU)) |>
+  filter(Turbidity..NTU < 7)
+ggplot(rwar2_turb) + geom_point(aes(x=DateTime, y=Turbidity..NTU))
+# Average by Day
+rwar2_turb_daily <- rwar2_turb |>
+  mutate(Day=date(DateTime)) |>
+  group_by(Day) |>
+  summarise(mean_Turbidity = mean(Turbidity..NTU))
+ggplot(rwar2_turb_daily) + geom_point(aes(x=Day, y=mean_Turbidity))
+
+## Merge daily temp, pH, conductivity, turbidity
+
+list_daily_data <- list(rwar2_temp_daily,
+                        rwar2_pH_daily, 
+                        rwar2_cond_daily,
+                        rwar2_turb_daily)
+merged_daily_data <- list_daily_data |>
+  reduce(full_join, by = "Day") |>
+  rename(Timestamp = Day)
+
+```
+
+```{r}
+## Export CSV of cleaned raw water data
+
+write_csv(merged_daily_data, )
 ```
 
 
