@@ -1,0 +1,36 @@
+---
+title: "Exploratory Analysis Ethan Schilling"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(tidymodels)
+library(dplyr)
+```
+
+```{r}
+TDS_unfilt <- read_csv("RWAR_TDS.csv")
+TOC_unfilt <- read_csv("RWAR_TOC.csv")
+
+df_TDS <- TDS_unfilt %>%
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+
+ggplot(df_TDS, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "TDS Value", title = "TDS over Time")
+
+
+df_TOC <- TOC_unfilt %>% 
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+  
+ggplot(df_TOC, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "TOC Value", title = "TOC over Time")
+
+```
+
