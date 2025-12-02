@@ -12,6 +12,7 @@ library(dplyr)
 ```
 
 ```{r}
+
 TDS_unfilt <- read_csv("RWAR_TDS.csv")
 TOC_unfilt <- read_csv("RWAR_TOC.csv")
 
@@ -31,6 +32,7 @@ df_TOC <- TOC_unfilt %>%
 ggplot(df_TOC, aes(x = date, y = value)) +
   geom_line() +
   labs(x = "Date", y = "TOC Value", title = "TOC over Time")
+
 
 ```
 
