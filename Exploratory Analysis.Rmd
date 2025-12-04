@@ -59,8 +59,9 @@ df3 = df3 %>%
 
 # This merge is only keeping the rows that are in both data frames
 # Not using df3 because I don't want our target variables to be included in the clustering
-merged = df1 %>% inner_join(df2, by = "Date")
-merged$Date = NULL # We already have the Timestamp column
+merged = df1 %>% 
+  inner_join(df2, by = "Date")
+merged$Timestamp = NULL # We'll keep the Date column
 
 cluster_data = merged %>%
   select(where(is.numeric)) %>%
@@ -77,7 +78,11 @@ merged$cluster = cluster_fit$cluster
 table(merged$cluster)
 cluster_fit$centers
 
-ggplot(merged, aes(x = cluster_data[ , "mean_Temp"], y = cluster_data[ , "mean_pH"], # you can compare any two columns
+cluster_plot = merged %>% 
+  inner_join(df3, by = "Date")
+
+# You can change the names to see different variables and their clusters
+ggplot(merged, aes(x = cluster_plot[ , "mean_Turbidity"], y = cluster_plot[ , "Ferric.chloride..mg.L"], # you can compare any two columns
                    color = factor(cluster))) +
   geom_point() +
   labs(title = "K-Means Clustering", color = "Cluster") +
