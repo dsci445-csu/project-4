@@ -15,7 +15,6 @@ library(tidyr)
 library(lubridate)
 library(ggplot2)
 
-
 data = read.csv("RWAR_turb_cond_counts_pH_temp.csv")
 
 data$Timestamp = mdy_hm(data$Timestamp)
@@ -43,3 +42,63 @@ ggplot(data, aes(x = Timestamp, y = Temperature..deg.C)) +
   geom_point()
 
 ```
+
+
+```{r}
+
+df1 = read.csv("RWAR_temp_pH_cond_turb_cleaned.csv")
+df2 = read.csv("alkalinity_hardness_cleaned.csv")
+df3 = read.csv("CoagulantDoses_2017-20.csv")
+
+df1 = df1 %>%
+  mutate(Date = ymd(Timestamp))
+df2 = df2 %>%
+  mutate(Date = mdy(Date))
+df3 = df3 %>%
+  mutate(Date = mdy(Date))
+
+# This merge is only keeping the rows that are in both data frames
+# Not using df3 because I don't want our target variables to be included in the clustering
+merged = df1 %>% inner_join(df2, by = "Date")
+merged$Date = NULL # We already have the Timestamp column
+
+cluster_data = merged %>%
+  select(where(is.numeric)) %>%
+  drop_na()
+
+cluster_data = scale(cluster_data) # Standardize the data
+
+cluster_fit = kmeans(cluster_data, centers = 5, nstart = 25)
+
+merged$cluster = cluster_fit$cluster
+
+# Interpretation
+
+table(merged$cluster)
+cluster_fit$centers
+
+ggplot(merged, aes(x = cluster_data[ , "mean_Temp"], y = cluster_data[ , "mean_pH"], # you can compare any two columns
+                   color = factor(cluster))) +
+  geom_point() +
+  labs(title = "K-Means Clustering", color = "Cluster") +
+  theme_bw()
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
