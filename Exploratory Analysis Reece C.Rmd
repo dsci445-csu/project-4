@@ -11,6 +11,7 @@ library(tidyr)
 library(lubridate)
 library(ggplot2)
 
+
 data = read.csv("RWAR_turb_cond_counts_pH_temp.csv")
 
 data$Timestamp = mdy_hm(data$Timestamp)
