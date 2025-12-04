@@ -8,6 +8,7 @@ output: beamer_presentation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+library(patchwork)
 ```
 
 
@@ -15,7 +16,10 @@ knitr::opts_chunk$set(echo = FALSE)
 ## Slide 1 
 
 ```{r}
-readRDS("TOC_plot.rds")
-readRDS("TDS_plot.rds")
+TOC <- readRDS("TOC_plot.rds")
+TDS <- readRDS("TDS_plot.rds")
+TOC + TDS
+
 ```
+
 
