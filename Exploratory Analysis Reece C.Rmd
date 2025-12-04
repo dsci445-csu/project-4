@@ -62,6 +62,9 @@ merged = df1 %>%
   inner_join(df2, by = "Date")
 merged$Timestamp = NULL # We'll keep the Date column
 
+```
+
+```{r}
 cluster_data = merged %>%
   select(where(is.numeric)) %>%
   drop_na()
@@ -96,9 +99,12 @@ ggplot(full_merge, aes(x = full_merge[ , "mean_Turbidity"],
 
 # Exploratory plots
 
+names(full_merge) = c("Temperature", "pH", "Conductivity", "Turbidity", "Date", "Alkalinity",
+                      "Hardness", "Cluster", "Ferric Chloride, mg/L", "Cationic Polimer, mg/L")
+
 long_df = full_merge %>%
-  pivot_longer(cols = c("mean_Temp", "mean_pH", "mean_Conductivity", "mean_Turbidity",
-                        "alkalinity", "hardness", "Ferric.chloride..mg.L", "Cationic.Polimer..mg.L"),
+  pivot_longer(cols = c("Temperature", "pH", "Conductivity", "Turbidity",
+                      "Alkalinity", "Hardness", "Ferric Chloride, mg/L", "Cationic Polimer, mg/L"),
                names_to = "metric",
                values_to = "value")
 
