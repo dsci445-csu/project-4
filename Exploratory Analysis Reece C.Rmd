@@ -1,5 +1,5 @@
 ---
-title: "Exploratory Analysis"
+title: "Exploratory Analysis Reece C"
 author: "Reece Carmody"
 date: "2025-11-17"
 output: pdf_document
@@ -46,6 +46,8 @@ ggplot(data, aes(x = Timestamp, y = Temperature..deg.C)) +
 
 ```{r}
 
+# Merging data
+
 df1 = read.csv("RWAR_temp_pH_cond_turb_cleaned.csv")
 df2 = read.csv("alkalinity_hardness_cleaned.csv")
 df3 = read.csv("CoagulantDoses_2017-20.csv")
@@ -69,6 +71,8 @@ cluster_data = merged %>%
 
 cluster_data = scale(cluster_data) # Standardize the data
 
+# Clustering (probably not as useful with time series data...)
+
 cluster_fit = kmeans(cluster_data, centers = 5, nstart = 25)
 
 merged$cluster = cluster_fit$cluster
@@ -78,20 +82,37 @@ merged$cluster = cluster_fit$cluster
 table(merged$cluster)
 cluster_fit$centers
 
-cluster_plot = merged %>% 
+full_merge = merged %>% 
   inner_join(df3, by = "Date")
 
 # You can change the names to see different variables and their clusters
-ggplot(merged, aes(x = cluster_plot[ , "mean_Turbidity"], y = cluster_plot[ , "Ferric.chloride..mg.L"], # you can compare any two columns
+ggplot(full_merge, aes(x = full_merge[ , "mean_Turbidity"],
+                       y = full_merge[ , "Ferric.chloride..mg.L"], # you can compare any two columns
                    color = factor(cluster))) +
   geom_point() +
   labs(title = "K-Means Clustering", color = "Cluster") +
   theme_bw()
 
-
 ```
 
+```{r}
 
+# Exploratory plots
+
+long_df = full_merge %>%
+  pivot_longer(cols = c("mean_Temp", "mean_pH", "mean_Conductivity", "mean_Turbidity",
+                        "alkalinity", "hardness", "Ferric.chloride..mg.L", "Cationic.Polimer..mg.L"),
+               names_to = "metric",
+               values_to = "value")
+
+ggplot(long_df, aes(x = Date, y = value))
+
+ggplot(full_merge, aes(x = Date, y = mean_pH)) +
+  geom_smooth() + 
+  labs(title = "title") +
+  theme_bw()
+
+```
 
 
 
