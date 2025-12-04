@@ -1,0 +1,118 @@
+---
+title: "HomeworkSet_10"
+author: "Joshua Tobey"
+date: "2025-12-04"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(knitr)
+library(ggplot2)
+
+set.seed(445)
+```
+PROBELM 1) We will explore the maximal margin classifier on a toy data set.
+a) 
+Refer to the sketch in the pdf.
+
+b) Equation for Optimal hyperplane, which I found in part d.  See the sketch in the pdf.
+
+$f(x^*) =  \beta_0 + \beta_1x_1 + \beta_2x_2$
+$>>1 - 2\beta_1 + 2\beta_2 = 0$
+
+c) Describe the classification rule for the maximal marginal classifier. It should be along the lines of “Classify to Red if 𝛽0+𝛽1𝑋1+𝛽2𝑋2>0, and classify as Blue otherwise. Provide the values of 𝛽0,𝛽1,𝛽2.
+
+\[
+\beta_0 + \beta_1x_1 + \beta_2x_2 
+\begin{cases}
+> 0 & \text{Classify Red} \\
+< 0 & \text{Classify Blue} \\
+= 0 & \text{On hyperplane}
+\end{cases}
+\]
+
+Values of $\beta_0, \beta_1 & \beta_2$: Refer to the pdf of sketch which has the algebra work on it.
+It uses the 3 support vectors (2,1), (2,2) and (4,3) as well as their equations.
+
+$\beta_0 = 1$
+$\beta_1 = -2$
+$\beta_2 = 2$
+
+d) On your sketch, indicate the margin for the maximal margin classifier.
+
+Refer back to pdf of sketch and algebra work.  Margins are in orange on the sketched graph.
+
+Given hyperplane $ = 1 - 2\beta_1 + 2\beta_2 = 0$.  The margins are subject to:
+\[
+$1 - 2\beta_1 + 2\beta_2 = 1$
+$1 - 2\beta_1 + 2\beta_2 = -1$
+\]
+
+e) Indicate the support vectors for the maximal margin classifier.
+
+Testing which points give an equation equal to 1 for red points and -1 for blue points.
+Red support vectors:
+$(2,2) = 1 - 2(2) + 2(2) = 1$
+$(4,4) = 1 - 2(4) + 2(4) = 1$
+Blue support vectors:
+$(2,1) = 1 - 2(2) + 2(1) = -1$
+$(4,3) = 1 - 2(4) + 2(3) = -1$
+
+f) Argue that a slight movement of the seventh observation would not affect the maximal margin hyperplane.
+
+Seeing that the seventh is a blue categorized point, it lies far below the hyper plane, so slight adjustments won't cause the point to interfere with the support vectors that are much closer to the hyperplane.
+
+g) Draw an additional observation on the plot so that the two classes are no longer separable by a hyperplane.
+
+Refer to the pdf of the sketched graph.  The added point will be circled in green.
+
+PROBLEM 2) We have seen that we can fit an SVM with a non-linear kernel in order to perform classification using a non-linear decision boundary. We will now see that we can also obtain a non-linear decision boundary by performing logistic regression using non-linear transformations of the features.
+
+a) Generate a data set with 𝑛=500 and 𝑝=2, such that the observations belong to two classes with a quadratic decision boundary.
+
+```{r}
+n <- 500
+x1 <- runif(n) - 0.5
+x2 <- runif(n) - 0.5
+y = as.numeric(x1^2 - x2^2 > 0)
+
+```
+b) Plot the observations, colored according to their class labels.
+```{r}
+plot(x1, x2, col = ifelse(y == 1, "red", "blue"))
+
+```
+c) Fit a logistic regression model to the data using 𝑋1 and 𝑋2 as predictors.
+```{r}
+library(parsnip)
+log_df <- data.frame(x1 = x1, x2 = x2, response = factor(y))
+log_spec <- logistic_reg()
+log_fit <- log_spec |>
+  fit(response ~ x1 + x2, data = log_df)
+log_fit |>
+  pluck("fit") |>
+  summary()
+
+
+```
+I googled the error: 
+
+Error in `check_outcome()`:
+! For a classification model, the outcome should be a <factor>, not a double vector.
+Run `rlang::last_trace()` to see where the error occurred.
+
+This led me to using the factor() function on the y in creating a dataframe to fit the logistic model.
+
+d) Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. What shape is the decision boundary?
+
+```{r}
+
+
+```
+
+
+
+
+
+

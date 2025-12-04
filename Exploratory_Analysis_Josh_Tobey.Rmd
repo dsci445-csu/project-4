@@ -1,0 +1,175 @@
+---
+title: "Exploratory_Analysis_Josh_Tobey"
+author: "Joshua Tobey"
+date: "2025-11-17"
+output: html_document
+---
+```{r}
+install.packages(c("usethis", "gitcreds"))
+```
+
+```{r}
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+library(knitr)
+
+```
+
+```{r}
+exploratory_df <- read_csv("RWAR_DOSING_clean.csv")
+colnames(exploratory_df)
+```
+
+```{r}
+ggplot(exploratory_df) +
+  geom_point(aes(x = `Turbidity, NTU`,
+                 y = `Temperature, deg C`,
+                 color = `Temperature, deg C`)) +
+  scale_color_gradient(low = 'yellow', high = 'green')
+```
+
+```{r}
+head(exploratory_df)
+
+```
+```{r}
+exploratory_df$Timestamp = mdy_hm(exploratory_df$Timestamp)
+ggplot(exploratory_df, aes(x = Timestamp,
+                           y = `pH, SU`,
+                           color = `pH, SU`)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'red')
+
+```
+
+```{r}
+unique(exploratory_df$`Conductivity, mS cm-1`)
+```
+```{r}
+ggplot(exploratory_df) +
+  geom_jitter(aes(x = `Turbidity, NTU`,
+                 y = `Conductivity, mS cm-1`,
+                 color = `Conductivity, mS cm-1`), width = 1, height = 3) +
+  scale_color_gradient(low = 'skyblue', high = 'orange')
+
+```
+Nothing of real interest here.
+```{r}
+coag_dose_df <- read_csv("CoagulantDoses_2017-20.csv")
+head(coag_dose_df)
+
+```
+```{r}
+#exploratory_df <- exploratory_df %>%
+  #mutate(`dosing (exploratory)` = coag_dose_df$`Cationic Polimer, mg/L` )
+length(exploratory_df) == length(coag_dose_df)
+```
+```{r}
+
+coag_dose_df$Date <- mdy(coag_dose_df$Date)
+ggplot(coag_dose_df) +
+  geom_line(aes(x = Date,
+                y = `Cationic Polimer, mg/L`))
+
+```
+```{r}
+alk_df <- read_csv("alkalinity_hardness_cleaned.csv")
+head(alk_df)
+
+```
+```{r}
+alk_df$Date <- mdy(alk_df$Date)
+ggplot(alk_df) +
+  geom_line(aes(x = Date,
+                y = alkalinity),
+            color = 'orange') +
+  geom_line(aes(x = Date,
+                y = hardness),
+            color = 'blue')
+  
+```
+```{r}
+generic_mlr <- linear_reg() |>
+  set_mode("regression") |>
+  set_engine("lm")
+
+mlr_recipe <- recipe(alkalinity ~ hardness, data = alk_df)
+mlr_wf <- workflow() |> 
+  add_model(generic_mlr) |> 
+  add_recipe(mlr_recipe)
+fit(mlr_wf, data = alk_df)
+```
+
+```{r}
+time_lag_1 <- 
+time_lag_2 <- 
+time_lag_3 <-
+
+weekly_log_spec <- logistic_reg()
+weekly_log_fit <- weekly_log_spec |>
+  fit(Direction ~ Lag1 + 
+      Lag2, 
+      family = "binomial", 
+      data = Weekly)
+weekly_log_fit |>
+  pluck("fit") |>
+  summary()
+
+
+```
+
+```{r}
+cross_validation <- initial_split(exploratory_df, prop = 0.6)
+exploratory_train <- training(cross_validation)
+exploratory_test <- testing(cross_validation)
+#OPTION 1:
+linear_recipe <- recipe(`pH SU` ~ `Temperature deg C`, data = exploratory_df)
+quad_recipe <- linear_recipe |> step_mutate(`Temperature deg C_2` = `Temperature deg C`^2)
+cubic_recipe <- quad_recipe |> step_mutate(`Temperature deg C_3` = `Temperature deg C`^3)
+quart_recipe <- cubic_recipe |> step_mutate(`Temperature deg C_4` = `Temperature deg C`^4)
+#OPTION 2:
+linear_recipe <- recipe(`pH SU` ~ ., data = exploratory_df)
+quad_recipe <- linear_recipe |> step_poly(all_numeric_predictors(), degree = 2)
+cubic_recipe <- quad_recipe |> step_poly(all_numeric_predictors(), degree = 3)
+quart_recipe <- cubic_recipe |> step_poly(all_numeric_predictors(), degree = 4)
+
+loocv_df <- loo_cv(dfi)
+test_errors <- data.frame()
+
+retrieve_test_error <- function(least_sqrs_model, testing_set) {
+  augment(least_sqrs_model, new_data = testing_set) |>
+    mutate(resid2 = .resid^2) |> 
+    summarise(rmse = sqrt(mean(resid2))) |>
+    pull(rmse)
+}
+
+for (i in seq_len(nrow(loocv_df))) {
+  train_data = training(loocv_df[i,]$splits[[1]])
+  test_data = testing(loocv_df[i,]$splits[[1]])
+  
+  Y1 <- workflow() |> add_model(lstSqrs_spec) |> add_recipe(linear_recipe) |> fit(train_data)
+  Y2 <- workflow() |> add_model(lstSqrs_spec) |> add_recipe(quad_recipe) |> fit(train_data)
+  Y3 <- workflow() |> add_model(lstSqrs_spec) |> add_recipe(cubic_recipe) |> fit(train_data)
+  Y4 <- workflow() |> add_model(lstSqrs_spec) |> add_recipe(quart_recipe) |> fit(train_data)
+ 
+  data.frame(model = c("linear", "quadratic", "cubic", "quartic"),
+             rmse = c(retrieve_test_error(Y1, test_data), 
+                   retrieve_test_error(Y2, test_data), 
+                   retrieve_test_error(Y3, test_data), 
+                   retrieve_test_error(Y4, test_data)),
+             i = i) |>
+    rbind(test_errors) -> test_errors
+
+}
+test_errors |> 
+  group_by(model) |>
+  summarise(rmse = sqrt(mean(rmse))) |>
+  kable()
+
+```
+
+
+
+
+
