@@ -20,19 +20,23 @@ df_TDS <- TDS_unfilt %>%
   rename(date = 1, value = 2) %>%
   mutate(date = as.Date(date, format = "%d-%b-%y"))
 
-ggplot(df_TDS, aes(x = date, y = value)) +
+TDS_plot <- ggplot(df_TDS, aes(x = date, y = value)) +
   geom_line() +
   labs(x = "Date", y = "TDS Value", title = "TDS over Time")
+
+saveRDS(TDS_plot,"TDS_plot.rds")
 
 
 df_TOC <- TOC_unfilt %>% 
   rename(date = 1, value = 2) %>%
   mutate(date = as.Date(date, format = "%d-%b-%y"))
   
-ggplot(df_TOC, aes(x = date, y = value)) +
+TOC_plot <- ggplot(df_TOC, aes(x = date, y = value)) +
   geom_line() +
   labs(x = "Date", y = "TOC Value", title = "TOC over Time")
 
+
+saveRDS(TOC_plot,"TOC_plot.rds")
 
 ```
 
