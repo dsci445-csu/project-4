@@ -190,14 +190,30 @@ summary(water_lm)
 
 ```{r}
 data <- read.csv("RWAR_dosing_cleaned.csv")
-data |>
+lagged_data <- data |>
   mutate(Temp_lag1 = lag(mean_Temp, 1), 
          Temp_lag2 = lag(mean_Temp, 2),
          pH_lag1 = lag(mean_pH, 1),
          pH_lag2 = lag(mean_pH, 2),
-         Conductivity_lag1 = lag(conductivity, 1),
-         Conductivity_lag2 = lag(conductivity, 2))
+         Cond_lag1 = lag(mean_Conductivity, 1),
+         Cond_lag2 = lag(mean_Conductivity, 2),
+         Turb_lag1 = lag(mean_Turbidity, 1),
+         Turb_lag2 = lag(mean_Turbidity, 2))
+# Temp
+lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
+lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
+# pH
+lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
+lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
+# Conductivity
+lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
+lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
+# Turbidity
+lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
+lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
 
+lagged_data
+lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp)))
 
 ```
 
