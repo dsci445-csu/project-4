@@ -5,10 +5,6 @@ date: "2025-11-17"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
 ```{r}
 library(dplyr)
 library(tidyr)
@@ -105,21 +101,16 @@ long_df = full_merge %>%
                names_to = "metric",
                values_to = "value")
 
-ggplot(long_df, aes(x = Date, y = value))
+ggplot(long_df, aes(x = Date, y = value)) +
+  geom_point(size = 0.1) +
+  facet_wrap(~ metric, scales = "free_y")
 
-ggplot(full_merge, aes(x = Date, y = mean_pH)) +
-  geom_smooth() + 
-  labs(title = "title") +
-  theme_bw()
+#ggplot(full_merge, aes(x = Date, y = mean_pH)) +
+#  geom_smooth() + 
+#  labs(title = "title") +
+#  theme_bw()
 
 ```
-
-
-
-
-
-
-
 
 
 
