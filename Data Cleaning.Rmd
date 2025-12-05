@@ -38,7 +38,7 @@ summary(merged_clean1) # no zero values, still a very large alkalinity value
 
 tail(sort(merged_clean1$alkalinity)) # two significant outliers (equipment likely)
 
-merged_clean2 <- merged[merged$alkalinity < 876, ] # remove outliers
+merged_clean2 <- merged_clean1[merged_clean1$alkalinity < 120, ] # remove outliers
 
 summary(merged_clean2) # successfully removed zero values and outliers
 
