@@ -144,11 +144,22 @@ merged_daily_data <- list_daily_data |>
 ```{r}
 ## Export CSV of cleaned raw water data
 
-write_csv(merged_daily_data, )
+#write_csv(merged_daily_data, )
+```
+
+```{r}
+# Merge dosing data to this data. Have significant overlap
+dosing <- read.csv("CoagulantDoses_2017-20.csv") |>
+  rename(Timestamp = Date) |> 
+  mutate(Timestamp = mdy(dosing$Timestamp))
+
+RWAR_dosing_cleaned <- inner_join(dosing, merged_daily_data)
+summary(RWAR_dosing_cleaned) #can export to csv with same name
+
 ```
 
 
-<<<<<<< HEAD
+
 ```{r}
 water_lm <- lm(Ferric.chloride..mg.L ~ ., 
                data=RWAR_dosing_cleaned |> select(-c(Timestamp, Cationic.Polimer..mg.L)))
@@ -180,7 +191,8 @@ lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
 lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
 lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
 
-lagged_data
-lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp)))
+
+lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp)))
+summary(lm_fit)
 
 ```
