@@ -9,22 +9,11 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-library(dplyr)
-library(tidyr)
-library(readr)
-library(lubridate)
-library(ggplot2)
-library(zoo)
-library(purrr)
-
-```
-
-
 ## Alkalinity and Hardness Data
 
 ```{r}
-
+library(dplyr)
+library(tidyr)
 
 # Match dates in alkalinity and hardness data
 alk <- read.csv("RWAR_alkalinity.csv")
@@ -58,7 +47,7 @@ summary(merged_clean2) # successfully removed zero values and outliers
 ```{r}
 # output merged data to CSV (run after processing)
 
-
+library(readr)
 write_csv(merged_clean2, "alkalinity_hardness_cleaned.csv")
 
 ```
@@ -66,6 +55,12 @@ write_csv(merged_clean2, "alkalinity_hardness_cleaned.csv")
 ## Raw Water Data
 
 ```{r}
+
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
+
 
 ## Import data, convert timestamp
 rwar <- read.csv("RWAR_turb_cond_counts_pH_temp.csv")
@@ -148,39 +143,12 @@ merged_daily_data <- list_daily_data |>
 
 ```{r}
 ## Export CSV of cleaned raw water data
-# run once, only after processing
-write_csv(merged_daily_data, "RWAR_temp_pH_cond_turb_cleaned.csv")
 
-```
-
-## Coagulant and Polymer Doses
-
-```{r}
-
-doses <- read.csv("CoagulantDoses_2017-20.csv")
-doses <- doses |> 
-  mutate(Timestamp = mdy(doses$Date)) |>
-  select(-c("Date"))
-
-ggplot(doses) +
-  geom_point(aes(x=Timestamp, y=Ferric.chloride..mg.L), color="red") +
-  geom_point(aes(x=Timestamp, y=Cationic.Polimer..mg.L), color="blue") +
-  xlab("Date")+
-  ylab("Dosing (mg/L)")+
-  ggtitle("Doses over Time (FeCl red, Cationic Polymer blue)")
-
-RWAR_dosing_cleaned <- merge(doses, merged_daily_data, by="Timestamp")
-
-```
-
-```{r}
-## Export to CSV
-# only execute after run processing steps above
-write_csv(RWAR_dosing_cleaned, "RWAR_dosing_cleaned.csv")
-
+write_csv(merged_daily_data, )
 ```
 
 
+<<<<<<< HEAD
 ```{r}
 water_lm <- lm(Ferric.chloride..mg.L ~ ., 
                data=RWAR_dosing_cleaned |> select(-c(Timestamp, Cationic.Polimer..mg.L)))
@@ -216,4 +184,3 @@ lagged_data
 lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp)))
 
 ```
-
