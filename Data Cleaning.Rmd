@@ -294,6 +294,9 @@ summary(df_lag_incdec$FeCl_change)
 # counts for polymer change
 summary(df_lag_incdec$Polymer_change)
 
+# do regression tree
+# LDA/QDA
+# random forest
 
 
 ```
