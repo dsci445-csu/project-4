@@ -211,7 +211,7 @@ class_df$Polymer_change <- ifelse(
 )
 
 
-write_csv(class_df, "RWAR_dosing_lag_incdec.csv")
+
 
 # # Temp
 # lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
@@ -231,6 +231,44 @@ lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data1 |> select(-c(Timestamp
 summary(lm_fit)
 
 ```
+
+```{r}
+write_csv(class_df, "RWAR_dosing_lag_incdec.csv")
+```
+
+
+### Classification
+
+```{r}
+
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") 
+
+df_lag_incdec$FeCl_change <- as.factor(df_lag_incdec$FeCl_change)
+df_lag_incdec$Polymer_change <- as.factor(df_lag_incdec$Polymer_change)
+
+summary(df_lag_incdec)
+
+df_lag_incdec <- df_lag_incdec |> 
+  mutate(Timestamp = ymd(df_lag_incdec$Timestamp))
+
+df_lag_incdec |>
+  select(-c(Timestamp)) |>
+  group_by(FeCl_change) |>
+  summarise(mean_Temp = mean(mean_Temp),
+            mean_pH = mean(mean_pH),
+            mean_cond = mean(mean_Conductivity),
+            mean_turbidity = mean(mean_Turbidity))
+
+# counts for FeCl change
+summary(df_lag_incdec$FeCl_change)
+# counts for polymer change
+summary(df_lag_incdec$Polymer_change)
+
+
+
+```
+
+
 
 
 
