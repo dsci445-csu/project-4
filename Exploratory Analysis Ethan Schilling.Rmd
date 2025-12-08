@@ -40,3 +40,35 @@ saveRDS(TOC_plot,"TOC_plot.rds")
 
 ```
 
+
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+dosing_data <- read_csv("RWAR_dosing_cleaned.csv")
+
+
+
+dosing_long <- dosing_data %>%
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(dosing_long, aes(x = Timestamp, y = Value, color = Ferric.chloride..mg.L)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Water Quality Characteristics Over Time by Dosing"
+  )
+```
+
+

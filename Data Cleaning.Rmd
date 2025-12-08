@@ -38,7 +38,7 @@ summary(merged_clean1) # no zero values, still a very large alkalinity value
 
 tail(sort(merged_clean1$alkalinity)) # two significant outliers (equipment likely)
 
-merged_clean2 <- merged[merged$alkalinity < 876, ] # remove outliers
+merged_clean2 <- merged_clean1[merged_clean1$alkalinity < 120, ] # remove outliers
 
 summary(merged_clean2) # successfully removed zero values and outliers
 
@@ -144,7 +144,161 @@ merged_daily_data <- list_daily_data |>
 ```{r}
 ## Export CSV of cleaned raw water data
 
-write_csv(merged_daily_data, )
+#write_csv(merged_daily_data, )
 ```
+
+```{r}
+# Merge dosing data to this data. Have significant overlap
+dosing <- read.csv("CoagulantDoses_2017-20.csv") |>
+  rename(Timestamp = Date) |> 
+  mutate(Timestamp = mdy(dosing$Timestamp))
+
+RWAR_dosing_cleaned <- inner_join(dosing, merged_daily_data)
+summary(RWAR_dosing_cleaned) #can export to csv with same name
+
+```
+
+
+
+```{r}
+water_lm <- lm(Ferric.chloride..mg.L ~ ., 
+               data=RWAR_dosing_cleaned |> select(-c(Timestamp, Cationic.Polimer..mg.L)))
+summary(water_lm)
+
+```
+
+```{r}
+data <- read.csv("RWAR_dosing_cleaned.csv")
+rwar_dosing_lag <- data |>
+  mutate(Temp_lag1 = lag(mean_Temp, 1), 
+         Temp_lag2 = lag(mean_Temp, 2),
+         pH_lag1 = lag(mean_pH, 1),
+         pH_lag2 = lag(mean_pH, 2),
+         Cond_lag1 = lag(mean_Conductivity, 1),
+         Cond_lag2 = lag(mean_Conductivity, 2),
+         Turb_lag1 = lag(mean_Turbidity, 1),
+         Turb_lag2 = lag(mean_Turbidity, 2),
+         FeCl_change = Ferric.chloride..mg.L - lag(Ferric.chloride..mg.L),
+         Polymer_change = Cationic.Polimer..mg.L - lag(Cationic.Polimer..mg.L))
+
+# Get rid of first two observations (have NA values now)
+rwar_dosing_lag1 <- rwar_dosing_lag[3:nrow(lagged_data),]
+
+class_df <- rwar_dosing_lag1
+
+
+threshold_smallchange <- 0.05
+
+# normal data
+class_df$FeCl_change <- ifelse(
+    test = abs(class_df$FeCl_change) < threshold_smallchange,
+    yes = "same",
+    no = ifelse(
+        test = class_df$FeCl_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+# polymer data
+class_df$Polymer_change <- ifelse(
+    test = abs(class_df$Polymer_change) < threshold_smallchange,
+    yes = "same",
+    no = ifelse(
+        test = class_df$Polymer_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+
+write_csv(rwar_dosing_lag1, )
+
+
+# # Temp
+# lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
+# lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
+# # pH
+# lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
+# lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
+# # Conductivity
+# lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
+# lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
+# # Turbidity
+# lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
+# lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
+
+
+lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data1 |> select(-c(Timestamp)))
+summary(lm_fit)
+
+```
+
+```{r}
+
+### Add inc/dec/same for dose
+
+class_df <- lagged_data1
+
+# normal data
+class_df$FeCl_change <- ifelse(
+    test = abs(class_df$FeCl_change) < 0.01,
+    yes = "same",
+    no = ifelse(
+        test = class_df$FeCl_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+# polymer data
+class_df$Polymer_change <- ifelse(
+    test = abs(class_df$Polymer_change) < 0.01,
+    yes = "same",
+    no = ifelse(
+        test = class_df$Polymer_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+class_df
+```
+
+
+
+### Classification
+
+```{r}
+
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") 
+
+df_lag_incdec$FeCl_change <- as.factor(df_lag_incdec$FeCl_change)
+df_lag_incdec$Polymer_change <- as.factor(df_lag_incdec$Polymer_change)
+
+summary(df_lag_incdec)
+
+df_lag_incdec <- df_lag_incdec |> 
+  mutate(Timestamp = ymd(df_lag_incdec$Timestamp))
+
+df_lag_incdec |>
+  select(-c(Timestamp)) |>
+  group_by(FeCl_change) |>
+  summarise(mean_Temp = mean(mean_Temp),
+            mean_pH = mean(mean_pH),
+            mean_cond = mean(mean_Conductivity),
+            mean_turbidity = mean(mean_Turbidity))
+
+# counts for FeCl change
+summary(df_lag_incdec$FeCl_change)
+# counts for polymer change
+summary(df_lag_incdec$Polymer_change)
+
+
+
+```
+
+
+
 
 

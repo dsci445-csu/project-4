@@ -1,0 +1,11 @@
+---
+title: "Exploratory Analysis"
+author: "Reece Carmody"
+date: "2025-11-17"
+output: pdf_document
+---
+
+```{r}
+print("GitHub test")
+
+```
