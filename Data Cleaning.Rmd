@@ -186,7 +186,7 @@ rwar_dosing_lag1 <- rwar_dosing_lag[3:nrow(lagged_data),]
 
 class_df <- rwar_dosing_lag1
 
-threshold_smallchange <- 0.05
+threshold_smallchange <- 0.01
 
 # normal data
 class_df$FeCl_change <- ifelse(
@@ -211,7 +211,8 @@ class_df$Polymer_change <- ifelse(
 )
 
 
-write_csv(rwar_dosing_lag1, )
+write_csv(class_df, "RWAR_dosing_lag_incdec.csv")
+
 # # Temp
 # lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
 # lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
@@ -231,34 +232,5 @@ summary(lm_fit)
 
 ```
 
-```{r}
 
-### Add inc/dec/same for dose
-
-class_df <- lagged_data1
-
-# normal data
-class_df$FeCl_change <- ifelse(
-    test = abs(class_df$FeCl_change) < 0.01,
-    yes = "same",
-    no = ifelse(
-        test = class_df$FeCl_change < 0,
-        yes = "dec",
-        no = "inc"
-    )
-)
-
-# polymer data
-class_df$Polymer_change <- ifelse(
-    test = abs(class_df$Polymer_change) < 0.01,
-    yes = "same",
-    no = ifelse(
-        test = class_df$Polymer_change < 0,
-        yes = "dec",
-        no = "inc"
-    )
-)
-
-class_df
-```
 
