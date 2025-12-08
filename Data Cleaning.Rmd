@@ -186,7 +186,7 @@ rwar_dosing_lag1 <- rwar_dosing_lag[3:nrow(lagged_data),]
 
 class_df <- rwar_dosing_lag1
 
-threshold_smallchange <- 0.05
+threshold_smallchange <- 0.01
 
 # normal data
 class_df$FeCl_change <- ifelse(
@@ -211,7 +211,8 @@ class_df$Polymer_change <- ifelse(
 )
 
 
-write_csv(rwar_dosing_lag1, )
+
+
 # # Temp
 # lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
 # lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
@@ -232,33 +233,42 @@ summary(lm_fit)
 ```
 
 ```{r}
-
-### Add inc/dec/same for dose
-
-class_df <- lagged_data1
-
-# normal data
-class_df$FeCl_change <- ifelse(
-    test = abs(class_df$FeCl_change) < 0.01,
-    yes = "same",
-    no = ifelse(
-        test = class_df$FeCl_change < 0,
-        yes = "dec",
-        no = "inc"
-    )
-)
-
-# polymer data
-class_df$Polymer_change <- ifelse(
-    test = abs(class_df$Polymer_change) < 0.01,
-    yes = "same",
-    no = ifelse(
-        test = class_df$Polymer_change < 0,
-        yes = "dec",
-        no = "inc"
-    )
-)
-
-class_df
+write_csv(class_df, "RWAR_dosing_lag_incdec.csv")
 ```
+
+
+### Classification
+
+```{r}
+
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") 
+
+df_lag_incdec$FeCl_change <- as.factor(df_lag_incdec$FeCl_change)
+df_lag_incdec$Polymer_change <- as.factor(df_lag_incdec$Polymer_change)
+
+summary(df_lag_incdec)
+
+df_lag_incdec <- df_lag_incdec |> 
+  mutate(Timestamp = ymd(df_lag_incdec$Timestamp))
+
+df_lag_incdec |>
+  select(-c(Timestamp)) |>
+  group_by(FeCl_change) |>
+  summarise(mean_Temp = mean(mean_Temp),
+            mean_pH = mean(mean_pH),
+            mean_cond = mean(mean_Conductivity),
+            mean_turbidity = mean(mean_Turbidity))
+
+# counts for FeCl change
+summary(df_lag_incdec$FeCl_change)
+# counts for polymer change
+summary(df_lag_incdec$Polymer_change)
+
+
+
+```
+
+
+
+
 
