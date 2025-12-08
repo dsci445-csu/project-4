@@ -9,11 +9,34 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, include=F}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
+library(knitr)
+library (patchwork)
+```
+
+
 ## Introduction
 
 ### Background and Motivation
 
-[Background on Drinking Water Treatment/Process Overview]
+The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. 
+
+There are four primary steps of the water treatment process:  
+1. Coagulation - Chemicals ("coagulants") are added to raw water to help contaminants
+group together into "floc" particles  
+2. Flocculation - The water is then slowly mixed to allow these floc particles to grow  
+3. Filtration - These particles are filtered out  
+4. Disinfection - Water is disinfected to get rid of biological contaminants  
+  
+This project will focus on Step 1. These chemical doses are one of the most important
+features of the treatment process that an operator can change to improve performance.
 
 Many different factors indicate effective chemical dose performance. Examples could include:
 
@@ -22,7 +45,6 @@ Many different factors indicate effective chemical dose performance. Examples co
 * observation of filter performance at the end of the process
 * total chemical byproducts produced
 * output water quality
-
 
 The chemical processes that determine treatment process performance are complex
 and highly interconnected, therefore all of these factors and more are important
@@ -51,32 +73,195 @@ based on other information.
 
 ## Data Overview and Cleaning
 
+### Data Overview
+
 The data used for this effort is a timeseries dataset from a Colorado water treatment
-plant covering XX years. This treatment plant takes its water from a reservoir, which
-tends to be a more stable water source than sources such as rivers or industrial supplies.  
+plant covering 3 years, from 2018-2020. This treatment plant takes its water from a reservoir, which tends to be a more stable water source than sources such as rivers or industrial supplies. 
   
-The available data are as follows, with missing date ranges noted:
+The available data are as follows:
 
 * Raw Water Data
     + pH
-    + Temperature
+    + Temperature (of the water)
     + Turbidity
     + Suspended Grain Size Information
     + Alkalinity
     + Hardness
 
 * Chemical Dosing Data
-    + Coagulant Dose
-    + Cationic Polymer Dose
+    + Coagulant Dose - primary additive (allows for floc particle formation)
+    + Cationic Polymer Dose - secondary additive (boosts size of floc particles)
 
+### Data Cleaning
+
+Basic data cleaning was conducted based on visual inspection. Most of the raw water 
+data we have available was on a 4-hour time increment. So, we decided to combine and 
+average by day for our predictions. This is because the dosing data is only 
+available as daily averages, so we needed to match our time resolution.  
+
+Before this averaging, we removed or modified values that were clearly outliers, so
+the averages would not be skewed by incorrect data. Reasons for these outliers are
+most likely equipment malfunction.  
+
+* pH: No significant outliers that we could see, so we simply day-averaged.  
+* Temperature: There was one region of approximately zero temperature (unrealistic
+for the reservoir). We got rid of these values and interpolated to the nearest non-zero temperature.
+* Conductivity: Values less than 0.2 and greater than 2 were removed, since they 
+are unreasonable based on this dataset and the "usual" values.
+* Turbidity: A few exceptionally high values (relative to the usual data values)
+were removed before averaging.
+* Grain Size Information: This data was highly variable, and simply looks like "noise",
+so did not seem helpful for prediction. We thus did not clean it.
+* Alkalinity and Hardness: These data have different time availability than the other
+datasets but will be inspected. Removed zero-values.
+  
+Final Combination: We merged the raw water data (excluding alkalinity/hardness) with the dosing data. We only lost about 10 records in this process, where there was not available 
+dosing data for the raw water measurements. 
 
 ## Exploratory Analysis
 
-## Predictor Selection
+Some of this cleaned data is presented below.
+
+### Plots of Key Treatment Plant Variables
+
+Alkalinity and hardness tend to stay fairly steady over time.
+
+```{r,echo=F}
+alk_df <- read_csv("alkalinity_hardness_cleaned.csv",show_col_types = FALSE)
+alk_df$Date <- mdy(alk_df$Date)
+
+plot_alk <- ggplot(alk_df, aes(x = Date,
+                           y = alkalinity,
+                           color = alkalinity)) +
+  geom_point() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Alkalinity")
+
+plot_hardness <- ggplot(alk_df, aes(x = Date,
+                           y = hardness,
+                           color = hardness)) +
+  geom_point() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Hardness")
+
+plot_alk/plot_hardness
+```
+See below for dosing compared to key raw water characteristics.
+
+```{r,echo=F}
+
+rwar_dosing <- read.csv("RWAR_dosing_cleaned.csv")
+rwar_dosing$Timestamp <- ymd(rwar_dosing$Timestamp)
+
+plot_pH <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = mean_pH,
+                           color = mean_pH)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Average pH")
+
+plot_polymer <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = Cationic.Polimer..mg.L,
+                           color = Cationic.Polimer..mg.L)) +
+  geom_line() + 
+  scale_color_gradient(low = 'yellow', high = 'green') +
+  theme_minimal() +
+  ggtitle("Polymer Coagulant")
+
+plot_FeCl <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = Ferric.chloride..mg.L,
+                           color = Ferric.chloride..mg.L)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'orange') +
+  theme_minimal() +
+  ggtitle("FeCl Coagulant")
+
+plot_temp <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = mean_Temp,
+                           color = mean_Temp)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Water Temperature")
+
+plot_cond <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = mean_Conductivity,
+                           color = mean_Conductivity)) +
+  geom_line() + 
+  scale_color_gradient(low = 'purple', high = 'yellow') +
+  theme_minimal() +
+  ggtitle("Water Conductivity")
+
+plot_turb <- ggplot(rwar_dosing, aes(x = Timestamp,
+                           y = mean_Turbidity,
+                           color = mean_Turbidity)) +
+  geom_line() + 
+  scale_color_gradient(low = 'black', high = 'orange') +
+  theme_minimal() +
+  ggtitle("Water Turbidity")
+
+plot_polymer/plot_FeCl
+plot_temp / plot_pH
+plot_cond / plot_turb
+```
+
+### Predictor Selection
+
+Overall, it seems like temperature and pH have the strongest 
+relationships to chemical dosing. This is consistent with feedback from treatment
+plant operators. It is not immediately clear which relationships could
+make effective predictors. Turbidity is highly variable and likely does 
+not have a strong relationship. Conductivity is similar.
+
+
+### Addition of Lagged Variables
+
+To capture time-dependence of this dataset, we will introduce lagged variables. 
+For each of the main water parameters, we will introduce two lagged variables, giving
+the water characteristics for the day before and two days before.
+```{r, echo=F}
+data <- read.csv("RWAR_dosing_cleaned.csv")
+lagged_data <- data |>
+  mutate(Temp_lag1 = lag(mean_Temp, 1), 
+         Temp_lag2 = lag(mean_Temp, 2),
+         pH_lag1 = lag(mean_pH, 1),
+         pH_lag2 = lag(mean_pH, 2),
+         Cond_lag1 = lag(mean_Conductivity, 1),
+         Cond_lag2 = lag(mean_Conductivity, 2),
+         Turb_lag1 = lag(mean_Turbidity, 1),
+         Turb_lag2 = lag(mean_Turbidity, 2))
+# Temp
+lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
+lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
+# pH
+lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
+lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
+# Conductivity
+lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
+lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
+# Turbidity
+lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
+lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
+```
 
 ## Modeling
 
 ### Linear Regression
+
+```{r}
+
+lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp, Cationic.Polimer..mg.L)))
+summary(lm_fit)
+
+```
+ Interesting initial result: the pH and temperature from two days before are
+ the only predictors with low p-values. This makes sense based on the "lag time"
+ from water quality change to dosing change.
+ 
+ We will now try models incorporating only some of the predictors.
 
 ### [Other Models]
 
@@ -88,6 +273,27 @@ It could serve as a decision-making tool for a treatment plant operator:
 * Obtains a recommended dose based on the decision tree
 * Easily interprets the "why" of the dosing recommendation by following the logic of the decision tree
 * Understands which variables were most important in deciding on a dose
+
+### Classification of Dose Change
+
+We added two variables called `dose_change_FeCl` and `dose_change_Poly` that indicate
+whether the chemical dose was increased, decreased, or stayed the same. Additionally, we
+added variables indicating change in temperature, pH, turbidity, and conductivity from
+the previous day.
+
+This will allow classification methods to be applied. Additionally, if effective,
+this could provide a more helpful tool for operators. Instead of attempting to 
+predict a specific dose, it could give a general direction for an operator to 
+attempt a dose change. This is how plants work in practice: an operator uses 
+some tool (a water test, a reading from a device, etc.), and uses that to make 
+a dose change. They then check important treatment metrics and make any needed
+further adjustments.
+
+```{r}
+
+
+
+```
 
 
 
