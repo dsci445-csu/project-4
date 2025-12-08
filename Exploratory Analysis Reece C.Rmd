@@ -1,0 +1,128 @@
+---
+title: "Exploratory Analysis Reece C"
+author: "Reece Carmody"
+date: "2025-11-17"
+output: pdf_document
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(ggplot2)
+
+
+data = read.csv("RWAR_turb_cond_counts_pH_temp.csv")
+
+data$Timestamp = mdy_hm(data$Timestamp)
+
+# Trying to determine what rows have outliers.
+# The goal is to go by column, remove outliers & average that day's data, then ultimately combine every column after it's cleaned to create our fully cleaned data frame.
+# Then combine with alkalinity and hardness & coagulant doses data??
+
+ggplot(data, aes(x = Timestamp, y = Turbidity..NTU)) +
+  geom_point()
+
+data[data$Turbidity..NTU > 10, ] # row 2701 and 5446
+
+ggplot(data, aes(x = Timestamp, y = Conductivity..mS.cm.1)) +
+  geom_point()
+
+data[data$Conductivity..mS.cm.1 > 15, ] # row 5270
+
+# Not sure what to do with particle count (PC) data just yet
+
+ggplot(data, aes(x = Timestamp, y = pH..SU)) +
+  geom_point()
+
+ggplot(data, aes(x = Timestamp, y = Temperature..deg.C)) +
+  geom_point()
+
+```
+
+
+```{r}
+
+# Merging data
+
+df1 = read.csv("RWAR_temp_pH_cond_turb_cleaned.csv")
+df2 = read.csv("alkalinity_hardness_cleaned.csv")
+df3 = read.csv("CoagulantDoses_2017-20.csv")
+
+df1 = df1 %>%
+  mutate(Date = ymd(Timestamp))
+df2 = df2 %>%
+  mutate(Date = mdy(Date))
+df3 = df3 %>%
+  mutate(Date = mdy(Date))
+
+# This merge is only keeping the rows that are in both data frames
+# Not using df3 because I don't want our target variables to be included in the clustering
+merged = df1 %>% 
+  inner_join(df2, by = "Date")
+merged$Timestamp = NULL # We'll keep the Date column
+
+```
+
+```{r}
+cluster_data = merged %>%
+  select(where(is.numeric)) %>%
+  drop_na()
+
+cluster_data = scale(cluster_data) # Standardize the data
+
+# Clustering (probably not as useful with time series data...)
+
+cluster_fit = kmeans(cluster_data, centers = 5, nstart = 25)
+
+merged$cluster = cluster_fit$cluster
+
+# Interpretation
+
+table(merged$cluster)
+cluster_fit$centers
+
+full_merge = merged %>% 
+  inner_join(df3, by = "Date")
+
+# You can change the names to see different variables and their clusters
+ggplot(full_merge, aes(x = full_merge[ , "mean_Turbidity"],
+                       y = full_merge[ , "Ferric.chloride..mg.L"], # you can compare any two columns
+                   color = factor(cluster))) +
+  geom_point() +
+  labs(title = "K-Means Clustering", color = "Cluster") +
+  theme_bw()
+
+```
+
+```{r}
+
+# Exploratory plots
+
+names(full_merge) = c("Temperature", "pH", "Conductivity", "Turbidity", "Date", "Alkalinity",
+                      "Hardness", "Cluster", "Ferric Chloride, mg/L", "Cationic Polimer, mg/L")
+
+long_df = full_merge %>%
+  pivot_longer(cols = c("Temperature", "pH", "Conductivity", "Turbidity",
+                      "Alkalinity", "Hardness", "Ferric Chloride, mg/L", "Cationic Polimer, mg/L"),
+               names_to = "metric",
+               values_to = "value")
+
+ggplot(long_df, aes(x = Date, y = value)) +
+  geom_point(size = 0.1) +
+  facet_wrap(~ metric, scales = "free_y")
+
+#ggplot(full_merge, aes(x = Date, y = mean_pH)) +
+#  geom_smooth() + 
+#  labs(title = "title") +
+#  theme_bw()
+
+```
+
+
+
+
+
+
+
+
