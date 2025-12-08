@@ -169,7 +169,7 @@ summary(water_lm)
 
 ```{r}
 data <- read.csv("RWAR_dosing_cleaned.csv")
-lagged_data <- data |>
+rwar_dosing_lag <- data |>
   mutate(Temp_lag1 = lag(mean_Temp, 1), 
          Temp_lag2 = lag(mean_Temp, 2),
          pH_lag1 = lag(mean_pH, 1),
@@ -177,22 +177,88 @@ lagged_data <- data |>
          Cond_lag1 = lag(mean_Conductivity, 1),
          Cond_lag2 = lag(mean_Conductivity, 2),
          Turb_lag1 = lag(mean_Turbidity, 1),
-         Turb_lag2 = lag(mean_Turbidity, 2))
-# Temp
-lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
-lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
-# pH
-lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
-lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
-# Conductivity
-lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
-lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
-# Turbidity
-lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
-lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
+         Turb_lag2 = lag(mean_Turbidity, 2),
+         FeCl_change = Ferric.chloride..mg.L - lag(Ferric.chloride..mg.L),
+         Polymer_change = Cationic.Polimer..mg.L - lag(Cationic.Polimer..mg.L))
+
+# Get rid of first two observations (have NA values now)
+rwar_dosing_lag1 <- rwar_dosing_lag[3:nrow(lagged_data),]
+
+class_df <- rwar_dosing_lag1
+
+threshold_smallchange <- 0.05
+
+# normal data
+class_df$FeCl_change <- ifelse(
+    test = abs(class_df$FeCl_change) < threshold_smallchange,
+    yes = "same",
+    no = ifelse(
+        test = class_df$FeCl_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+# polymer data
+class_df$Polymer_change <- ifelse(
+    test = abs(class_df$Polymer_change) < threshold_smallchange,
+    yes = "same",
+    no = ifelse(
+        test = class_df$Polymer_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
 
 
-lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data |> select(-c(Timestamp)))
+write_csv(rwar_dosing_lag1, )
+# # Temp
+# lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
+# lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
+# # pH
+# lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
+# lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
+# # Conductivity
+# lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
+# lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
+# # Turbidity
+# lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
+# lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
+
+
+lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data1 |> select(-c(Timestamp)))
 summary(lm_fit)
 
 ```
+
+```{r}
+
+### Add inc/dec/same for dose
+
+class_df <- lagged_data1
+
+# normal data
+class_df$FeCl_change <- ifelse(
+    test = abs(class_df$FeCl_change) < 0.01,
+    yes = "same",
+    no = ifelse(
+        test = class_df$FeCl_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+# polymer data
+class_df$Polymer_change <- ifelse(
+    test = abs(class_df$Polymer_change) < 0.01,
+    yes = "same",
+    no = ifelse(
+        test = class_df$Polymer_change < 0,
+        yes = "dec",
+        no = "inc"
+    )
+)
+
+class_df
+```
+
