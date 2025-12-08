@@ -298,6 +298,19 @@ summary(df_lag_incdec$Polymer_change)
 # LDA/QDA
 # random forest
 
+# Look at performance of a model that simply pulls previous year dose
+
+
+closest_prev_dose <- df_lag_incdec |>
+  rowwise() |>
+  mutate(
+    target_time = Timestamp - years(1),
+    prev_year_dose = df_lag_incdec$value[which.min(abs(df_lag_incdec$Timestamp - target_time))]
+  ) |>
+  ungroup()
+
+closest_prev_dose
+
 
 ```
 
