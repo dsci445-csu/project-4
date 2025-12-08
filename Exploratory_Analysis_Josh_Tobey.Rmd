@@ -34,10 +34,7 @@ ggplot(exploratory_df) +
 head(exploratory_df)
 
 ```
-```{r}
-summary(exploratory_df)
 
-```
 
 ```{r}
 exploratory_df$Timestamp = ymd(exploratory_df$Timestamp)
@@ -49,16 +46,7 @@ ggplot(exploratory_df, aes(x = Timestamp,
   scale_color_gradient(low = 'blue', high = 'red')
 
 ```
-```{r}
-exploratory_df$Timestamp <- ymd(exploratory_df$Timestamp)
-exploratory_df <- exploratory_df[order(exploratory_df$Timestamp), ]
-ggplot(exploratory_df, aes(x = Timestamp,
-                           y = mean_Temp,
-                           color = mean_Temp)) +
-  geom_line() + 
-  scale_color_gradient(low = 'yellow', high = 'green')
 
-```
 ```{r}
 library(patchwork)
 plot1 <- ggplot(exploratory_df, aes(x = Timestamp,
