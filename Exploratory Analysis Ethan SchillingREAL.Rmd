@@ -107,38 +107,46 @@ train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
 test  <- RWAR_dosing %>% filter(Year == 2020)
 
 # 1 Interaction Term
-model1 <- lm(FeCl_dose ~ mean_Temp * mean_Turbidity + mean_pH + Temp_lag1 + Turb_lag1, 
+
+model1 <- lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1 + Turb_lag1, 
              data = train)
 summary(model1)
 
 
 test$pred_model1 <- predict(model1, newdata = test)
 
+cat("Model 1 RMSE:", rmse(test$FeCl_dose, test$pred_model1), "\n")
+cat("Model 1 MAE :", mae(test$FeCl_dose, test$pred_model1), "\n")
 
-rmse(test$FeCl_dose, test$pred_model1)
-mae(test$FeCl_dose, test$pred_model1)
-
-
+    
 
 # 2 Interaction Terms
-model2 <- lm(FeCl_dose ~ mean_Temp * mean_pH +mean_Conductivity * mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+
+model2 <- lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
 
 test$pred_model2 <- predict(model2, newdata = test)
 
-rmse(test$FeCl_dose, test$pred_model2)
-mae(test$FeCl_dose, test$pred_model2)
+cat("Model 2 RMSE:", rmse(test$FeCl_dose, test$pred_model2), "\n")
+cat("Model 2 MAE :", mae(test$FeCl_dose, test$pred_model2), "\n")
 
 
-# Step Up 
+model3 <- lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
 
-response_var <- "FeCl_dose" 
-predictors <- c("mean_Temp", "mean_pH", "mean_Conductivity",
-                "mean_Turbidity", "Temp_lag1", "Temp_lag2",
-                "pH_lag1", "pH_lag2", "Cond_lag1", "Cond_lag2",
-                "Turb_lag1", "Turb_lag2")
+test$pred_model3 <- predict(model3, newdata = test)
 
+cat("Model 3 RMSE:", rmse(test$FeCl_dose, test$pred_model3), "\n")
+cat("Model 3 MAE :", mae(test$FeCl_dose, test$pred_model3), "\n")
+
+# 2 Interactions: Cond and PH and Temp and Cond
+
+model4 <- lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+
+test$pred_model4 <- predict(model4, newdata = test)
+
+cat("Model 4 RMSE:", rmse(test$FeCl_dose, test$pred_model4), "\n")
+cat("Model 4 MAE :", mae(test$FeCl_dose, test$pred_model4), "\n")
 
 
 ```
 
-test
+
