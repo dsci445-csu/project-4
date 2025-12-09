@@ -152,10 +152,10 @@ See below for dosing compared to key raw water characteristics.
 
 ```{r,echo=F}
 
-rwar_dosing <- read.csv("RWAR_dosing_cleaned.csv")
-rwar_dosing$Timestamp <- ymd(rwar_dosing$Timestamp)
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |>
+  mutate(Timestamp = ymd(Timestamp))
 
-plot_pH <- ggplot(rwar_dosing, aes(x = Timestamp,
+plot_pH <- ggplot(df_lag_incdec, aes(x = Timestamp,
                            y = mean_pH,
                            color = mean_pH)) +
   geom_line() + 
@@ -163,23 +163,23 @@ plot_pH <- ggplot(rwar_dosing, aes(x = Timestamp,
   theme_minimal() +
   ggtitle("Average pH")
 
-plot_polymer <- ggplot(rwar_dosing, aes(x = Timestamp,
-                           y = Cationic.Polimer..mg.L,
-                           color = Cationic.Polimer..mg.L)) +
+plot_polymer <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = Polymer_dose,
+                           color = Polymer_dose)) +
   geom_line() + 
   scale_color_gradient(low = 'yellow', high = 'green') +
   theme_minimal() +
   ggtitle("Polymer Coagulant")
 
-plot_FeCl <- ggplot(rwar_dosing, aes(x = Timestamp,
-                           y = Ferric.chloride..mg.L,
-                           color = Ferric.chloride..mg.L)) +
+plot_FeCl <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = FeCl_dose,
+                           color = FeCl_dose)) +
   geom_line() + 
   scale_color_gradient(low = 'blue', high = 'orange') +
   theme_minimal() +
   ggtitle("FeCl Coagulant")
 
-plot_temp <- ggplot(rwar_dosing, aes(x = Timestamp,
+plot_temp <- ggplot(df_lag_incdec, aes(x = Timestamp,
                            y = mean_Temp,
                            color = mean_Temp)) +
   geom_line() + 
@@ -187,7 +187,7 @@ plot_temp <- ggplot(rwar_dosing, aes(x = Timestamp,
   theme_minimal() +
   ggtitle("Water Temperature")
 
-plot_cond <- ggplot(rwar_dosing, aes(x = Timestamp,
+plot_cond <- ggplot(df_lag_incdec, aes(x = Timestamp,
                            y = mean_Conductivity,
                            color = mean_Conductivity)) +
   geom_line() + 
@@ -195,7 +195,7 @@ plot_cond <- ggplot(rwar_dosing, aes(x = Timestamp,
   theme_minimal() +
   ggtitle("Water Conductivity")
 
-plot_turb <- ggplot(rwar_dosing, aes(x = Timestamp,
+plot_turb <- ggplot(df_lag_incdec, aes(x = Timestamp,
                            y = mean_Turbidity,
                            color = mean_Turbidity)) +
   geom_line() + 
