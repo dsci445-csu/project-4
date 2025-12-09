@@ -208,6 +208,42 @@ plot_temp / plot_pH
 plot_cond / plot_turb
 ```
 
+```{r}
+
+df_lag_incdec_long <- df_lag_incdec |>
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Water Quality Characteristics Over Time Colored by Dosing"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "FeCl_change",
+    shape = "FeCl_change",
+    title = "Water Quality Characteristics Colored by Dose Change"
+  )
+
+```
+
+
 ### Predictor Selection
 
 Overall, it seems like temperature and pH have the strongest 
