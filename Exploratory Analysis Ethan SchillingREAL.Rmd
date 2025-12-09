@@ -137,6 +137,8 @@ predictors <- c("mean_Temp", "mean_pH", "mean_Conductivity",
                 "pH_lag1", "pH_lag2", "Cond_lag1", "Cond_lag2",
                 "Turb_lag1", "Turb_lag2")
 
+
+
 ```
 
-
+test
