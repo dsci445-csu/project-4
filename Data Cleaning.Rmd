@@ -269,6 +269,7 @@ summary(df_lag_incdec$Polymer_change)
 
 ```{r}
 # Look at performance of a model that simply pulls previous year dose
+# not working
 
 dosing <- read_csv("CoagulantDoses_2017-20.csv")
 dosing <- dosing |> 
@@ -288,11 +289,11 @@ df_lag_incdec_prevdose <- df_lag_incdec |>
 
 
 ```{r}
-df_lag_incdec |>
+new_df <- df_lag_incdec |>
   rename(FeCl_dose = Ferric.chloride..mg.L,
          Polymer_dose = Cationic.Polimer..mg.L)
 
-write.csv(df_lag_incdec, "RWAR_dosing_lag_incdec.csv")
+write.csv(new_df, "RWAR_dosing_lag_incdec.csv")
 
 ```
 
