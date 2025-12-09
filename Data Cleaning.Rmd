@@ -9,6 +9,28 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, include=F}
+library(ISLR) ## data package
+library(tidyverse) ## data manipulation
+library(tidymodels) ## tidy modeling
+library(knitr) ## tables
+library(rpart.plot) ## tree diagrams
+library(vip) ## plotting variable importance
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
+library(knitr)
+library(patchwork) ## plot arrangement
+library(parsnip)
+library(discrim)
+```
+
+
+
 ## Alkalinity and Hardness Data
 
 ```{r}
@@ -184,9 +206,9 @@ rwar_dosing_lag <- data |>
 # Get rid of first two observations (have NA values now)
 rwar_dosing_lag1 <- rwar_dosing_lag[3:nrow(lagged_data),]
 
+## Set up a column of inc/dec for 
 class_df <- rwar_dosing_lag1
-
-threshold_smallchange <- 0.01
+threshold_smallchange <- 0.01 # cutoff for dose changes that are approx. zero
 
 # normal data
 class_df$FeCl_change <- ifelse(
@@ -209,26 +231,6 @@ class_df$Polymer_change <- ifelse(
         no = "inc"
     )
 )
-
-
-
-
-# # Temp
-# lagged_data$Temp_lag1[1] <- lagged_data$Temp_lag1[2]
-# lagged_data$Temp_lag2[1:2] <- lagged_data$Temp_lag2[3]
-# # pH
-# lagged_data$pH_lag1[1] <- lagged_data$pH_lag1[2]
-# lagged_data$pH_lag2[1:2] <- lagged_data$pH_lag2[3]
-# # Conductivity
-# lagged_data$Cond_lag1[1] <- lagged_data$Cond_lag1[2]
-# lagged_data$Cond_lag2[1:2] <- lagged_data$Cond_lag2[3]
-# # Turbidity
-# lagged_data$Turb_lag1[1] <- lagged_data$Turb_lag1[2]
-# lagged_data$Turb_lag2[1:2] <- lagged_data$Turb_lag2[3]
-
-
-lm_fit <- lm(Ferric.chloride..mg.L ~ ., data=lagged_data1 |> select(-c(Timestamp)))
-summary(lm_fit)
 
 ```
 
@@ -276,39 +278,113 @@ summary(df_lag_incdec$Polymer_change)
 ```
 
 ```{r}
+## SET SEED
+set.seed(445)
 
-## TRAIN/TEST DATA
-train_df <- df_lag_incdec |> filter(year(Timestamp) <= 2019)
-test_df  <- df_lag_incdec |> filter(year(Timestamp) == 2020)
+## TRAIN/TEST DATA (2018-2019 and 2020)
+df_full <- df_lag_incdec |> select(-c(FeCl_dose, Polymer_dose))
+df_train <- df_full |> filter(year(Timestamp) <= 2019)
+df_test  <- df_full |> filter(year(Timestamp) == 2020)
+```
 
+
+```{r}
+set.seed(445)
 
 ## RANDOM FOREST
-
 rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("classification")
 
-rf_fit <- rf_spec |>
-  fit(high_sales ~ ., data = df_train)
+# Different model fits
+rf_fit1 <- rf_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+rf_fit2 <- rf_spec |>
+  fit(FeCl_change ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, 
+      data = df_train)
+rf_fit3 <- rf_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp, 
+      data = df_train)
 
-vip(rf_fit) ## still Price and Shelf location are the most important
+# Model fit to take performance metrics of:
+rf_fit <- rf_fit3
 
+# Most important predictors
+vip(rf_fit)
+
+## Accuracy
 rf_fit |>
   augment(new_data = df_test) |>
-  accuracy(truth = high_sales, estimate = .pred_class)
-
-# 5. Compare the OOB confusion matrix to your test confusion matrix. [**Hint:** The `confusion` element of the model output fit is OOB.]
-
-## OOB:
-rf_fit |>
-  extract_fit_engine() %>%
-  .$confusion
-
-## test confusion
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+## Test confusion matrix
 rf_fit |>
   augment(new_data = df_test) |>
-  conf_mat(truth = high_sales, estimate = .pred_class)
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+
+## Notes
+# 34% accuracy for all predictors
+# 47% accuracy for just temperature and pH
+
 ```
+
+```{r}
+## set seed
+set.seed(445)
+
+## LDA
+lda_spec <- discrim_linear()
+lda_fit1 <- lda_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+lda_fit2 <- lda_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp, data = df_train)
+
+# select LDA to take metrics of
+lda_fit <- lda_fit2
+
+# Test confusion matrix
+lda_fit |> 
+  augment(new_data = df_test) |>
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+
+# Test accuracy
+lda_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+
+## Notes
+# 39% test accuracy on all predictors
+# 41% test accuracy on temp and pH
+
+
+## QDA
+qda_spec <- discrim_quad()
+qda_fit1 <- qda_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+qda_fit2 <- qda_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp, data = df_train)
+
+# select LDA to take metrics of
+qda_fit <- qda_fit2
+
+# Test confusion matrix
+qda_fit |> 
+  augment(new_data = df_test) |>
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+
+# Test accuracy
+qda_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+
+## Notes
+# 39.5% test accuracy on all predictors
+# 43.7% test accuracy on temp and pH
+
+```
+
 
 
 
