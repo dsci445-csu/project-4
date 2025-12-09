@@ -241,20 +241,29 @@ write_csv(class_df, "RWAR_dosing_lag_incdec.csv")
 
 ```{r}
 
-df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") 
-
+# Pull in data
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |> 
+  mutate(Timestamp = ymd(Timestamp))
 df_lag_incdec$FeCl_change <- as.factor(df_lag_incdec$FeCl_change)
 df_lag_incdec$Polymer_change <- as.factor(df_lag_incdec$Polymer_change)
 
-summary(df_lag_incdec)
 
-df_lag_incdec <- df_lag_incdec |> 
-  mutate(Timestamp = ymd(Timestamp))
-
+# Look at average water characteristics for each FeCl dose change group
 df_lag_incdec |>
   select(-c(Timestamp)) |>
   group_by(FeCl_change) |>
-  summarise(mean_Temp = mean(mean_Temp),
+  summarise(count = n(),
+            mean_Temp = mean(mean_Temp),
+            mean_pH = mean(mean_pH),
+            mean_cond = mean(mean_Conductivity),
+            mean_turbidity = mean(mean_Turbidity))
+
+# Look at average water characteristics for each polymer dose change group
+df_lag_incdec |>
+  select(-c(Timestamp)) |>
+  group_by(Polymer_change) |>
+  summarise(count = n(),
+            mean_Temp = mean(mean_Temp),
             mean_pH = mean(mean_pH),
             mean_cond = mean(mean_Conductivity),
             mean_turbidity = mean(mean_Turbidity))
@@ -264,8 +273,45 @@ summary(df_lag_incdec$FeCl_change)
 # counts for polymer change
 summary(df_lag_incdec$Polymer_change)
 
-
 ```
+
+```{r}
+
+## TRAIN/TEST DATA
+train_df <- df_lag_incdec |> filter(year(Timestamp) <= 2019)
+test_df  <- df_lag_incdec |> filter(year(Timestamp) == 2020)
+
+
+## RANDOM FOREST
+
+rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("classification")
+
+rf_fit <- rf_spec |>
+  fit(high_sales ~ ., data = df_train)
+
+vip(rf_fit) ## still Price and Shelf location are the most important
+
+rf_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = high_sales, estimate = .pred_class)
+
+# 5. Compare the OOB confusion matrix to your test confusion matrix. [**Hint:** The `confusion` element of the model output fit is OOB.]
+
+## OOB:
+rf_fit |>
+  extract_fit_engine() %>%
+  .$confusion
+
+## test confusion
+rf_fit |>
+  augment(new_data = df_test) |>
+  conf_mat(truth = high_sales, estimate = .pred_class)
+```
+
+
+
 
 ```{r}
 # Look at performance of a model that simply pulls previous year dose
@@ -283,17 +329,6 @@ df_lag_incdec_prevdose <- df_lag_incdec |>
     FeCl_prev = dosing$Ferric.chloride..mg.L[which.min(abs(dosing$Timestamp - target_time))],
     Polymer_prev = dosing$`Cationic Polimer, mg/L`[which.min(abs(dosing$Timestamp - target_time))]) |>
   ungroup()
-
-```
-
-
-
-```{r}
-new_df <- df_lag_incdec |>
-  rename(FeCl_dose = Ferric.chloride..mg.L,
-         Polymer_dose = Cationic.Polimer..mg.L)
-
-write.csv(new_df, "RWAR_dosing_lag_incdec.csv")
 
 ```
 
