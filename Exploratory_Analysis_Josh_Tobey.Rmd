@@ -126,10 +126,6 @@ fit(mlr_wf, data = alk_df)
 ```
 
 ```{r}
-time_lag_1 <- 
-time_lag_2 <- 
-time_lag_3 <-
-
 weekly_log_spec <- logistic_reg()
 weekly_log_fit <- weekly_log_spec |>
   fit(Direction ~ Lag1 + 
@@ -212,37 +208,32 @@ head(RWAR_dosing_lag_incdec)
 
 ```{r}
 library(mgcv)
+library(parsnip)
 
-lm_spec <- linear_reg()
-
-gam_formula <- Ferric.chloride..mg.L ~ s(Cationic.Polimer..mg.L) + s(mean_Temp) + s(mean_pH) + s(mean_Conductivity) + s(mean_Turbidity) + s(Temp_lag1) + s(Temp_lag2) + s(pH_lag1) + s(pH_lag2) + s(Cond_lag1) + s(Cond_lag2) + s(Turb_lag1) + s(Turb_lag2)
-
-gam_fit <- gam(gam_formula, data = RWAR_dosing_lag_incdec)
-gam_rec <- recipe(Ferric.chloride..mg.L ~ ., data = RWAR_dosing_lag_incdec) %>%
-  step_ns(Cationic.Polimer..mg.L, deg_free = 10) %>%
-  step_ns(mean_Temp, deg_free = 10) %>%
-  step_ns(mean_pH, deg_free = 10) %>%
-  step_ns(mean_Conductivity, deg_free = 10) %>%
-  step_ns(mean_Turbidity, deg_free = 10) %>%
-  step_ns(Temp_lag1, deg_free = 10) %>%
-  step_ns(Temp_lag2, deg_free = 10) %>%
-  step_ns(pH_lag1, deg_free = 10) %>%
-  step_ns(pH_lag2, deg_free = 10) %>%
-  step_ns(Cond_lag1, deg_free = 10) %>%
-  step_ns(Cond_lag2, deg_free = 10) %>%
-  step_ns(Turb_lag1, deg_free = 10) %>%
-  step_ns(Turb_lag2, deg_free = 10)
-  
+gam_spec <- gen_additive_mod() |> 
+  set_engine("mgcv") |> 
+  set_mode("regression")
+gam_rec <- recipe(FeCl_dose ~ Polymer_dose + mean_Temp + mean_pH + mean_Conductivity +
+                 mean_Turbidity + Temp_lag1 + Temp_lag2 +
+                 pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 +
+                 Turb_lag1 + Turb_lag2, data = RWAR_dosing_lag_incdec)
 
 gam_wf <- workflow() |>
-  add_model(lm_spec) |>
+  add_model(gam_spec) |>
   add_recipe(gam_rec)
 
-gam_fit <- gam_wf |>
-  fit(data = RWAR_dosing_lag_incdec)
+gam_fit <- gam(
+  FeCl_dose ~ s(Polymer_dose) + s(mean_Temp) + s(mean_pH) + s(mean_Conductivity) +
+               s(mean_Turbidity) + s(Temp_lag1) + s(Temp_lag2) +
+               s(pH_lag1) + s(pH_lag2) + s(Cond_lag1) + s(Cond_lag2) +
+               s(Turb_lag1) + s(Turb_lag2),
+  data = RWAR_dosing_lag_incdec
+)
 
 gam_fit |> tidy()
 gam_fit |> glance()
+```
+```{r}
 
 dat_grid_dose <- RWAR_dosing_lag_incdec |> 
   summarize(
@@ -339,8 +330,18 @@ dat_grid_turb_lag2 <- RWAR_dosing_lag_incdec |>
   mutate(Turb_lag2 = seq(min(RWAR_dosing_lag_incdec$Turb_lag2), max(RWAR_dosing_lag_incdec$Turb_lag2),
                                       length.out = 100))
 
-dose_pred <- augment(gam_fit, new_data = dat_grid_dose)
-temp_pred <- augment(gam_fit, new_data = dat_grid_temp)
+pred1 <- predict(gam_fit, newdata = dat_grid_dose, type = "response", se.fit = TRUE)
+dose_pred <- dat_grid_dose |> mutate(
+  .fitted = pred1$fit,
+  .lower = pred1$fit - 2 * pred1$se.fit,
+  .upper = pred1$fit + 2 * pred1$se.fit
+  )
+pred2 <- predict(gam_fit, newdata = dat_grid_temp, type = "response", se.fit = TRUE)
+temp_pred <- dat_grid_temp |> mutate(
+  .fitted = pred2$fit,
+  .lower = pred2$fit - 2 * pred2$se.fit,
+  .upper = pred2$fit + 2 * pred2$se.fit
+)
 pH_pred <- augment(gam_fit, new_data = dat_grid_pH)
 cond_pred <- augment(gam_fit, new_data = dat_grid_cond)
 turb_pred <- augment(gam_fit, new_data = dat_grid_turb)
@@ -353,34 +354,12 @@ condLag2_pred <- augment(gam_fit, new_data = dat_grid_cond_lag2)
 turbLag1_pred <- augment(gam_fit, new_data = dat_grid_turb_lag1)
 turbLag2_pred <- augment(gam_fit, new_data = dat_grid_turb_lag2)
 
-
-
-
 ```
 
 ```{r}
-for(pred in c("age", "year", "education")) {
-  pred_dat <- dose_pred_gam[, c(pred, ".pred", ".pred_lower", ".pred_upper")] |>
-    group_by_at(pred) |>
-    summarise(.pred = mean(.pred), .pred_lower = mean(.pred_lower), .pred_upper = mean(.pred_upper))
-  dose_dat <- RWAR_dosing_lag_incdec[, c(pred, "Ferric.chloride..mg.L")]
-  
-  if(is.numeric(dose_dat |> pull(pred))) {
-    p <- dose_dat |>
-      ggplot() +
-      geom_point(aes_string(pred, "wage"), alpha = .3) +
-      geom_line(aes_string(pred, ".pred"), data = pred_dat, colour = "darkgreen") +
-      geom_line(aes_string(pred, ".pred_lower"), data = pred_dat, colour = "darkgreen", lty = 2) +
-      geom_line(aes_string(pred, ".pred_upper"), data = pred_dat, colour = "darkgreen", lty = 2)
-  } else {
-    p <- dose_dat |>
-      ggplot() +
-      geom_jitter(aes_string(pred, "wage"), alpha = .3) +
-      geom_point(aes_string(pred, ".pred"), data = pred_dat, colour = "darkgreen") +
-      geom_errorbar(aes_string(pred, ymin = ".pred_lower", ymax = ".pred_upper"), data = pred_dat, colour = "darkgreen")
-  }
-  print(p)
-}
+ggplot(dose_pred, aes(Polymer_dose, .fitted)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.2)
 ```
 
 
