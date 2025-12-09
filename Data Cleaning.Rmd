@@ -27,6 +27,11 @@ library(knitr)
 library(patchwork) ## plot arrangement
 library(parsnip)
 library(discrim)
+library(nnet)
+library(broom)
+library(dplyr)
+library(kableExtra) 
+
 ```
 
 
@@ -385,7 +390,71 @@ qda_fit |>
 
 ```
 
+```{r}
 
+## MULTINOMIAL REGRESSION
+multi_model <- multinom_reg() |>
+  set_engine("nnet") |>
+  set_mode("classification")
+
+multi_recipe1 <- recipe(FeCl_change ~ mean_pH + mean_Temp, data = df_train) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+multi_recipe <- multi_recipe1
+
+multi_workflow <- workflow() |>
+  add_recipe(multi_recipe) |>
+  add_model(multi_model)
+
+multi_fit <- fit(multi_workflow, data = df_train)
+
+df_pred_class <- predict(multi_fit, new_data = df_test, type = "class") |>
+  bind_cols(df_test |> select(FeCl_change))
+df_pred_probs <- predict(multi_fit, new_data = df_test, type = "prob") |>
+  bind_cols(df_test |> select(FeCl_change))
+
+accuracy_result <- metrics(df_pred_class, truth = FeCl_change, estimate = .pred_class)
+confusion_matrix <- conf_mat(df_pred_class, truth = FeCl_change, estimate = .pred_class)
+
+# results
+print(accuracy_result)
+print(confusion_matrix)
+
+library(broom)
+library(dplyr)
+library(knitr)    # For kable()
+library(kableExtra) # For extra formatting
+
+# 1. Extract the model fit object
+fit_engine <- multi_fit |> extract_fit_engine()
+
+# 2. Tidy the results using the broom package
+# The tidy function converts the coefficient matrix into a clean data frame.
+tidy_coeffs <- tidy(fit_engine)
+
+# 3. Format the table using kable/kableExtra for display
+tidy_coeffs |>
+  # Round all numeric columns for cleaner display
+  mutate(across(where(is.numeric), ~ round(., 4))) |>
+  
+  # Rename columns for clarity (optional, but helpful)
+  rename(
+    Category = y.level,
+    Predictor = term,
+    Coefficient = estimate,
+    Std_Error = std.error,
+    Z_Value = statistic,
+    P_Value = p.value
+  ) |>
+  
+  # Create a nicely formatted Markdown table
+  knitr::kable("markdown")
+  # OR use kableExtra for more styling options (e.g., HTML/PDF output)
+  # kableExtra::kbl(format = "html") |>
+  # kableExtra::kable_styling(bootstrap_options = "striped", full_width = FALSE)
+multi_fit |> extract_fit_engine() |> tibble()
+```
 
 
 
