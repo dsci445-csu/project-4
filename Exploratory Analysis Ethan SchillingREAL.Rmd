@@ -1,0 +1,142 @@
+---
+title: "Exploratory Analysis Ethan Schilling"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(tidymodels)
+library(dplyr)
+library(Metrics)
+```
+
+```{r}
+
+TDS_unfilt <- read_csv("~/DSCI445/project-4/RWAR_TDS.csv")
+TOC_unfilt <- read_csv("~/DSCI445/project-4/RWAR_TOC.csv")
+DOC_unfilt <- read_csv("~/DSCI445/project-4/RWAR_DOC.csv")
+
+df_TDS <- TDS_unfilt %>%
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+
+TDS_plot <- ggplot(df_TDS, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Total Dissolved Solids mg/L", title = "Total Dissolved Solids over Time")
+
+
+df_TOC <- TOC_unfilt %>% 
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+  
+TOC_plot <- ggplot(df_TOC, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Total Organinc Carbon mg/L", title = "Total Organic Carbon over Time")
+
+df_DOC <- DOC_unfilt %>%
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+
+
+DOC_plot <- ggplot(df_DOC, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Dissolved Organic Carbon mg/L", title = "Dissolved Organic Carbon over Time")
+
+
+saveRDS(TDS_plot,"TDS_plot.rds")
+saveRDS(TOC_plot,"TOC_plot.rds")
+saveRDS(DOC_plot,"DOC_plot.rds")
+
+TDS_plot
+TOC_plot
+DOC_plot
+
+getwd()
+```
+
+
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(Metrics)
+
+
+dosing_data <- read.csv("~/DSCI445/project-4/RWAR_dosing_cleaned.csv")
+
+
+
+dosing_long <- dosing_data %>%
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(dosing_long, aes(x = Timestamp, y = Value, color = Ferric.chloride..mg.L)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Water Quality Characteristics Over Time by Dosing"
+  )
+
+
+
+RWAR_dosing <- read.csv("~/DSCI445/project-4/RWAR_dosing_lag_incdec.csv")
+
+RWAR_dosing
+
+
+RWAR_dosing <- RWAR_dosing %>% 
+  mutate(Timestamp = ymd(Timestamp),
+         Year = year(Timestamp))
+
+RWAR_dosing
+
+
+train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
+test  <- RWAR_dosing %>% filter(Year == 2020)
+
+# 1 Interaction Term
+model1 <- lm(FeCl_dose ~ mean_Temp * mean_Turbidity + mean_pH + Temp_lag1 + Turb_lag1, 
+             data = train)
+summary(model1)
+
+
+test$pred_model1 <- predict(model1, newdata = test)
+
+
+rmse(test$FeCl_dose, test$pred_model1)
+mae(test$FeCl_dose, test$pred_model1)
+
+
+
+# 2 Interaction Terms
+model2 <- lm(FeCl_dose ~ mean_Temp * mean_pH +mean_Conductivity * mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+
+test$pred_model2 <- predict(model2, newdata = test)
+
+rmse(test$FeCl_dose, test$pred_model2)
+mae(test$FeCl_dose, test$pred_model2)
+
+
+# Step Up 
+
+response_var <- "FeCl_dose" 
+predictors <- c("mean_Temp", "mean_pH", "mean_Conductivity",
+                "mean_Turbidity", "Temp_lag1", "Temp_lag2",
+                "pH_lag1", "pH_lag2", "Cond_lag1", "Cond_lag2",
+                "Turb_lag1", "Turb_lag2")
+
+```
+
+
