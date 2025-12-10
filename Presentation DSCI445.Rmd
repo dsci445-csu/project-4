@@ -1,8 +1,11 @@
 ---
 title: "DSCI 445 Presentation"
 author: "Ethan Schilling, Joshua Tobey, Dawson Carney, Reece Carmody"
-date: "2025-12-04"
-output: beamer_presentation
+date: "2025-12-11"
+output: 
+  beamer_presentation:
+    theme: "Warsaw"
+    colortheme: "default"
 ---
 
 
@@ -10,12 +13,359 @@ output: beamer_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
+```{r, include=F}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
+library(knitr)
+library(patchwork)
+library(tidyverse)
+library(tidymodels)
+library(rpart.plot)
+library(kableExtra)
+library(vip)
+```
 
+# Example Slide Title
 
-## Slide 1 
+Example text.
+
+- Bullet points
+- Bullet points
+
+## New section of text
+
+More example text
 
 ```{r}
-readRDS("TOC_plot.rds")
-readRDS("TDS_plot.rds")
+#readRDS("TOC_plot.rds")
+#readRDS("TDS_plot.rds")
 ```
+
+# Background and Motivation
+
+The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. There are four primary steps of the water treatment process:   
+   
+1. Coagulation - Chemicals ("coagulants") are added to raw water to help contaminants
+group together into "floc" particles  
+2. Flocculation - The water is then slowly mixed to allow these floc particles to grow  
+3. Filtration - These particles are filtered out  
+4. Disinfection - Water is disinfected to get rid of biological contaminants  
+  
+This project will focus on Step 1. These chemical doses are one of the most important
+features of the treatment process that an operator can change to improve performance.
+
+# Background and Motivation
+
+**The role of an operator in deciding water treatment plant chemical doses is to
+look at a wide array of factors and make decisions about how to adjust
+chemical doses.**   
+   
+- Treatment plant conditions change rapidly
+- A predictive tool to help select chemical doses is beneficial both financially and environmentally
+
+```{r}
+# Add explanation picture/plot to help people visualize here??
+```
+
+# Data Overview
+
+Three years of data from 2018-2020, provided by a water treatment plant in Aurora, Colorado.
+
+- Raw Water Data
+   - pH
+   - Temperature (of the water)
+   - Turbidity
+   - Conductivity
+   - Suspended Grain Size
+   - Alkalinity
+   - Hardness
+   
+- Chemical Dosing Data
+   - Ferric Chloride Dose: primary additive
+   - Cationic Polymer Dose: secondary additive
+   
+# Data Cleaning
+
+- Features were averaged to match the dosing data's daily increments 
+- Merged various datasets into a final cleaned dataset
+- Various outliers (likely caused by equipment malfunction) were either removed or interpolated
+- Suspended Grain Size was not used as it was highly variable
+- Alkalinity and Hardness was not used because of missing data chunks and differing time ranges
+
+# Exploratory Analysis
+
+```{r, fig.width=7, fig.height=2}
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |>
+  mutate(Timestamp = ymd(Timestamp))
+
+plot_polymer <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = Polymer_dose,
+                           color = Polymer_dose)) +
+  geom_line() + 
+  scale_color_gradient(low = 'yellow', high = 'green') +
+  theme_minimal() +
+  ggtitle("Polymer Coagulant")
+
+print(plot_polymer)
+
+plot_FeCl <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = FeCl_dose,
+                           color = FeCl_dose)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'orange') +
+  theme_minimal() +
+  ggtitle("FeCl Coagulant")
+
+print(plot_FeCl)
+```
+
+# Exploratory Analysis
+
+```{r, fig.width=7, fig.height=2}
+
+plot_pH <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = mean_pH,
+                           color = mean_pH)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Average pH")
+
+print(plot_pH)
+
+plot_temp <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = mean_Temp,
+                           color = mean_Temp)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'red') +
+  theme_minimal() +
+  ggtitle("Water Temperature")
+
+print(plot_temp)
+
+```
+
+# Exploratory Analysis
+
+```{r, fig.width=7, fig.height=2}
+
+plot_cond <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = mean_Conductivity,
+                           color = mean_Conductivity)) +
+  geom_line() + 
+  scale_color_gradient(low = 'purple', high = 'yellow') +
+  theme_minimal() +
+  ggtitle("Water Conductivity")
+
+print(plot_cond)
+
+plot_turb <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = mean_Turbidity,
+                           color = mean_Turbidity)) +
+  geom_line() + 
+  scale_color_gradient(low = 'black', high = 'orange') +
+  theme_minimal() +
+  ggtitle("Water Turbidity")
+
+print(plot_turb)
+
+```
+
+# Predictor Selection
+
+Generally, temperature and pH seem to have the strongest relationship. This coincides with feedback from treatment plant operators. For further analysis, we will use:   
+   
+- pH
+- Temperature
+- Conductivity
+- Turbidity
+
+# Introducing Lagged Variables
+
+Similar to the Stock dataset we've seen in labs and homeworks, our time series dataset needs lagged variables.   
+   
+- For each of the main four parameters:
+   - Introduce two lagged variables
+   - First represents the day before
+   - Second represents two days before
+
+# Coagulant Dose Prediction
+
+**Add slides for various numerical prediction models**
+
+# Coagulant Dose Prediction: Decision Tree
+
+```{r, fig.width=7, fig.height=3.8}
+set.seed(445)
+
+# Decision Tree
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+tree_depth = 5 # tree depth
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+tree_spec = decision_tree(tree_depth = tree_depth, min_n = min_n) %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(tree_spec)
+
+fit_tree = workflow %>%
+  fit(data = train_data)
+
+# Plot the tree
+
+fit_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+
+# Assess accuracy
+
+predictions = fit_tree %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+rmse = sqrt(mean((actual - predicted)^2))
+r_squared = cor(actual, predicted)^2
+mae = mean(abs(actual-predicted))
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+
+```
+
+# Coagulant Dose Prediction: Random Forest
+
+**Note - make a cleaner table!**
+
+```{r, fig.width=7, fig.height=3.8}
+set.seed(445)
+
+# Random Forest
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+trees = 500 # number of trees in the forest
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+rf_spec = rand_forest(trees = trees, min_n = min_n) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(rf_spec)
+
+fit_rf = workflow %>%
+  fit(data = train_data)
+
+# Assess accuracy
+
+predictions = fit_rf %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+# Metrics and plots
+
+model_metrics = predictions %>%
+  metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+
+print(model_metrics)
+
+vip(fit_rf, bar = TRUE) +
+  theme_minimal(base_size = 14) +
+  labs(title = "Top Feature Importances")
+
+```
+
+# Coagulant Change Prediction
+
+**Add slides for various classification models**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

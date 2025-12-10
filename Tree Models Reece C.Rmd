@@ -9,6 +9,9 @@ set.seed(445)
 library(dplyr)
 library(tidyverse)
 library(tidymodels)
+library(rpart.plot)
+library(knitr)
+library(kableExtra)
 
 # Decision Tree
 
@@ -23,13 +26,11 @@ data$Polymer_change = NULL
 # Can change these if you want to modify the tree/data
 tree_depth = 5 # tree depth
 min_n = 50 # minimum observations needed to further split
-train_proportion = 0.8 # split of data
 
-n = nrow(data)
-indices = sample(1:n, size = floor(train_proportion * n))
-
-train_data = data[indices, ]
-test_data  = data[-indices, ]
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
 
 # Create the tree
 
@@ -58,14 +59,18 @@ actual = predictions$`FeCl_dose` # Change target variable here
 predicted = predictions$.pred
 
 rmse = sqrt(mean((actual - predicted)^2))
-print(paste("RMSE: ", rmse))
-
 r_squared = cor(actual, predicted)^2
-print(paste("R Squared: ", r_squared))
+mae = mean(abs(actual-predicted))
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
 
 # Plot the tree
-
-library(rpart.plot)
 
 fit_tree %>%
   extract_fit_engine() %>%
@@ -79,6 +84,8 @@ set.seed(445)
 library(dplyr)
 library(tidyverse)
 library(tidymodels)
+#library(yardstick)
+library(vip)
 
 # Random Forest
 
@@ -93,13 +100,11 @@ data$Polymer_change = NULL
 # Can change these if you want to modify the tree/data
 trees = 500 # number of trees in the forest
 min_n = 50 # minimum observations needed to further split
-train_proportion = 0.8 # split of data
 
-n = nrow(data)
-indices = sample(1:n, size = floor(train_proportion * n))
-
-train_data = data[indices, ]
-test_data  = data[-indices, ]
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
 
 # Create the tree
 
@@ -108,7 +113,7 @@ recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable h
   step_rm(Polymer_dose) # Remove the other target variable here
 
 rf_spec = rand_forest(trees = trees, min_n = min_n) %>%
-  set_engine("ranger") %>%
+  set_engine("ranger", importance = "impurity") %>%
   set_mode("regression")
 
 workflow = workflow() %>%
@@ -127,10 +132,21 @@ predictions = fit_rf %>%
 actual = predictions$`FeCl_dose` # Change target variable here
 predicted = predictions$.pred
 
-rmse = sqrt(mean((actual - predicted)^2))
-print(paste("RMSE: ", rmse))
+# Metrics and plots
 
-r_squared = cor(actual, predicted)^2
-print(paste("R Squared: ", r_squared))
+model_metrics = predictions %>%
+  metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+
+print(model_metrics)
+
+ggplot(predictions, aes(x = FeCl_dose, y = .pred)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = "Random Forest Accuracy",
+       x = "Actual",
+       y = "Predicted") +
+  theme_bw()
+
+vip(fit_rf)
 
 ```
