@@ -237,11 +237,36 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
 
 # Coagulant Dose Prediction: Linear Regression
 
-**Ethan: insert table with models attempted**
+- Created 6 models with different predictors and combinations of interaction terms. 
+
+- Used lag variables for temp, ph, conductivity, turbidity
+
+- Dropped Turbidity as it was not a good predictor for FeCL dosing.
+  - Conductivity was also dropped eventually due to being similar to Turbidity
+
+- Difficult to determine what factors of the dataset are driving the predictions.
+
+- RMSE and MAE seem to be all over the place dependent on which predictors are selected and the interactions.
+
+# RMSE & MAE Table
+
+```{r, out.width="80%", out.height="88%"}
+knitr::include_graphics("Images/linear_model_table.png")
+```
+
+
+# Performance
+
+- Performed best with multiple interactions between Conductivity, Temp, and pH
+
+- Still not great predictions, many are overfit and underfit.
+
+- Linear Structure doesn't capture the relations in our predictors, and incorrect predictions could lead to disastorus results if too much or too little chemical is used.
+
 
 # Coagulant Dose Prediction: Decision Tree
 
-```{r, fig.width=7, fig.height=3.8}
+```{r, fig.width=5, fig.height=2.5}
 set.seed(445)
 
 # Decision Tree
@@ -311,9 +336,7 @@ kable(metrics, booktabs = TRUE, digits = 3) %>%
 
 # Coagulant Dose Prediction: Random Forest
 
-**Note - make a cleaner table!**
-
-```{r, fig.width=6.5, fig.height=3.4}
+```{r, fig.width=5, fig.height=2.1}
 set.seed(445)
 
 # Random Forest
@@ -363,14 +386,30 @@ predicted = predictions$.pred
 
 # Metrics and plots
 
+# Metrics and plots
+
 model_metrics = predictions %>%
   metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+rmse = model_metrics$.estimate[1]
+r_squared = model_metrics$.estimate[2]
+mae = model_metrics$.estimate[3]
 
-print(model_metrics)
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
 
-vip(fit_rf, bar = TRUE) +
-  theme_minimal(base_size = 14) +
-  labs(title = "Top Feature Importances")
+vip(fit_rf, num_features = 20) +
+  geom_col(color = "black", fill = "coral") +
+  labs(
+    title = "Feature Importance (Random Forest)",
+    x = "Importance",
+    y = "Feature"
+  ) +
+  theme_minimal(base_size = 9)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
 
 ```
 

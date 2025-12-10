@@ -11,6 +11,7 @@ library(tidymodels)
 library(dplyr)
 library(Metrics)
 library(kableExtra)
+
 ```
 
 ```{r}
@@ -211,8 +212,8 @@ for(i in 1:length(models)) {
   pred <- predict(models[[i]], newdata = test)
   performance <- rbind(performance,
                        data.frame(Model = paste0("Model ", i-1),
-                                  RMSE = round(rmse(test$FeCl_dose, pred), 3),
-                                  MAE  = round(mae(test$FeCl_dose, pred), 3),
+                                  RMSE = round(Metrics::rmse(test$FeCl_dose, pred), 3),
+                                  MAE  = round(Metrics::mae(test$FeCl_dose, pred), 3),
                                   Description = descriptions[i],
                                   stringsAsFactors = FALSE))
 
@@ -229,5 +230,55 @@ kable_table <- performance %>%
 
 kable_table
 
+
+p3 <- ggplot(test, aes(x = FeCl_dose, y = pred_model3)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 3: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p4 <- ggplot(test, aes(x = FeCl_dose, y = pred_model4)) +
+  geom_point(color = "green") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 4: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p3
+p4
+
+
 ```
+
+
+
+# Coagulant Dose Prediction Linear Regression
+
+```{r}
+knitr::include_graphics("Images/linear_model_table.png")
+```
+
+
+
+## Regression Models
+
+- Created 6 models with different predictors and combinations of interaction terms. 
+
+- Dropped Turbidity as it was not a good predictor for FeCL dosing.
+
+- Difficult to determine what factors of the dataset are driving the predictions.
+
+
+### Performance
+
+- Performed best with multiple interactions between Conductivity, Temp, and pH
+
+- Still not great predictions many are overfit and underfit.
+
+- Linear Structure doesn't capture the relations in our predictors
 
