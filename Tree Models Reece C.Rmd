@@ -84,8 +84,9 @@ set.seed(445)
 library(dplyr)
 library(tidyverse)
 library(tidymodels)
-#library(yardstick)
 library(vip)
+library(knitr)
+library(kableExtra)
 
 # Random Forest
 
@@ -136,17 +137,33 @@ predicted = predictions$.pred
 
 model_metrics = predictions %>%
   metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+rmse = model_metrics$.estimate[1]
+r_squared = model_metrics$.estimate[2]
+mae = model_metrics$.estimate[3]
 
-print(model_metrics)
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
 
-ggplot(predictions, aes(x = FeCl_dose, y = .pred)) +
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1) +
-  labs(title = "Random Forest Accuracy",
-       x = "Actual",
-       y = "Predicted") +
-  theme_bw()
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+model_metrics$.estimate
 
-vip(fit_rf)
+#ggplot(predictions, aes(x = FeCl_dose, y = .pred)) +
+#  geom_point() +
+#  geom_abline(intercept = 0, slope = 1) +
+#  labs(title = "Random Forest Accuracy",
+#       x = "Actual",
+#       y = "Predicted") +
+#  theme_bw()
 
+vip(fit_rf, num_features = 20) +
+  geom_col(color = "black", fill = "coral") +
+  labs(
+    title = "Feature Importance (Random Forest)",
+    x = "Importance",
+    y = "Feature"
+  ) +
+  theme_minimal(base_size = 14)
 ```
