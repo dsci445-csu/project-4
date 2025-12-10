@@ -125,7 +125,7 @@ mlr_wf <- workflow() |>
 fit(mlr_wf, data = alk_df)
 ```
 
-```{r}
+```{r, eval = FALSE}
 weekly_log_spec <- logistic_reg()
 weekly_log_fit <- weekly_log_spec |>
   fit(Direction ~ Lag1 + 
@@ -139,7 +139,7 @@ weekly_log_fit |>
 
 ```
 
-```{r}
+```{r, eval = FALSE}
 cross_validation <- initial_split(exploratory_df, prop = 0.6)
 exploratory_train <- training(cross_validation)
 exploratory_test <- testing(cross_validation)
@@ -201,7 +201,7 @@ head(RWAR_dosing_lag_incdec)
 ```
 ```{r}
 RWAR_dosing_lag_incdec <- RWAR_dosing_lag_incdec %>%
-  select(-c(FeCl_change, Polymer_change, Timestamp))
+  select(-c(FeCl_change, Polymer_change))
 head(RWAR_dosing_lag_incdec)
 ```
 
@@ -209,6 +209,9 @@ head(RWAR_dosing_lag_incdec)
 ```{r}
 library(mgcv)
 library(parsnip)
+df_full <- RWAR_dosing_lag_incdec
+df_train <- df_full |> filter(year(Timestamp) <= 2019)
+df_test  <- df_full |> filter(year(Timestamp) == 2020)
 
 gam_spec <- gen_additive_mod() |> 
   set_engine("mgcv") |> 
@@ -216,7 +219,7 @@ gam_spec <- gen_additive_mod() |>
 gam_rec <- recipe(FeCl_dose ~ Polymer_dose + mean_Temp + mean_pH + mean_Conductivity +
                  mean_Turbidity + Temp_lag1 + Temp_lag2 +
                  pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 +
-                 Turb_lag1 + Turb_lag2, data = RWAR_dosing_lag_incdec)
+                 Turb_lag1 + Turb_lag2, data = df_train)
 
 gam_wf <- workflow() |>
   add_model(gam_spec) |>
@@ -227,107 +230,114 @@ gam_fit <- gam(
                s(mean_Turbidity) + s(Temp_lag1) + s(Temp_lag2) +
                s(pH_lag1) + s(pH_lag2) + s(Cond_lag1) + s(Cond_lag2) +
                s(Turb_lag1) + s(Turb_lag2),
-  data = RWAR_dosing_lag_incdec
+  data = df_train
 )
 
 gam_fit |> tidy()
 gam_fit |> glance()
 ```
 ```{r}
+pred_df <- df_test %>% 
+  mutate(pred = predict(gam_fit, newdata = df_test))
+rmse(pred_df, truth = FeCl_dose, estimate = pred)
+#The test data shows that 
 
-dat_grid_dose <- RWAR_dosing_lag_incdec |> 
-  summarize(
-    across(everything(), mean, na.rm = TRUE)
-  ) |> 
-  slice(rep(1, 100)) |> 
-  mutate(Polymer_dose = seq(min(RWAR_dosing_lag_incdec$Polymer_dose),
-                                      max(RWAR_dosing_lag_incdec$Polymer_dose),
-                                      length.out = 100))
-dat_grid_temp <- RWAR_dosing_lag_incdec |> 
-  summarize(
-    across(everything(), mean, na.rm = TRUE)
-  ) |> 
-  slice(rep(1, 100)) |> 
-  mutate(mean_Temp = seq(min(RWAR_dosing_lag_incdec$mean_Temp), 
-                         max(RWAR_dosing_lag_incdec$mean_Temp),
-                                      length.out = 100))
-dat_grid_pH <- RWAR_dosing_lag_incdec |> 
-  summarize(
-    across(everything(), mean, na.rm = TRUE)
-  ) |> 
-  slice(rep(1, 100)) |> 
-  mutate(mean_pH = seq(min(RWAR_dosing_lag_incdec$mean_pH), max(RWAR_dosing_lag_incdec$mean_pH),
-                                      length.out = 100))
+```
 
-dat_grid_cond <- RWAR_dosing_lag_incdec |> 
+```{r}
+
+dat_grid_dose <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(mean_Conductivity = seq(min(RWAR_dosing_lag_incdec$mean_Conductivity), max(RWAR_dosing_lag_incdec$mean_Conductivity),
+  mutate(Polymer_dose = seq(min(df_train$Polymer_dose),
+                                      max(df_train$Polymer_dose),
                                       length.out = 100))
-dat_grid_turb <- RWAR_dosing_lag_incdec |> 
+dat_grid_temp <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(mean_Turbidity = seq(min(RWAR_dosing_lag_incdec$mean_Turbidity), max(RWAR_dosing_lag_incdec$mean_Turbidity),
+  mutate(mean_Temp = seq(min(df_train$mean_Temp), 
+                         max(df_train$mean_Temp),
                                       length.out = 100))
-dat_grid_temp_lag1 <- RWAR_dosing_lag_incdec |> 
+dat_grid_pH <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Temp_lag1 = seq(min(RWAR_dosing_lag_incdec$Temp_lag1), max(RWAR_dosing_lag_incdec$Temp_lag1),
+  mutate(mean_pH = seq(min(df_train$mean_pH), max(df_train$mean_pH),
                                       length.out = 100))
-dat_grid_temp_lag2 <- RWAR_dosing_lag_incdec |> 
+dat_grid_cond <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Temp_lag2 = seq(min(RWAR_dosing_lag_incdec$Temp_lag2), max(RWAR_dosing_lag_incdec$Temp_lag2),
+  mutate(mean_Conductivity = seq(min(df_train$mean_Conductivity), max(df_train$mean_Conductivity),
                                       length.out = 100))
-dat_grid_pH_lag1 <- RWAR_dosing_lag_incdec |> 
+dat_grid_turb <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(pH_lag1 = seq(min(RWAR_dosing_lag_incdec$pH_lag1), max(RWAR_dosing_lag_incdec$pH_lag1),
+  mutate(mean_Turbidity = seq(min(df_train$mean_Turbidity), max(df_train$mean_Turbidity),
                                       length.out = 100))
-dat_grid_pH_lag2 <- RWAR_dosing_lag_incdec |> 
+dat_grid_temp_lag1 <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(pH_lag2 = seq(min(RWAR_dosing_lag_incdec$pH_lag2), max(RWAR_dosing_lag_incdec$pH_lag2),
+  mutate(Temp_lag1 = seq(min(df_train$Temp_lag1), max(df_train$Temp_lag1),
                                       length.out = 100))
-dat_grid_cond_lag1 <- RWAR_dosing_lag_incdec |> 
+dat_grid_temp_lag2 <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Cond_lag1 = seq(min(RWAR_dosing_lag_incdec$Cond_lag1), max(RWAR_dosing_lag_incdec$Cond_lag1),
+  mutate(Temp_lag2 = seq(min(df_train$Temp_lag2), max(df_train$Temp_lag2),
                                       length.out = 100))
-dat_grid_cond_lag2 <- RWAR_dosing_lag_incdec |> 
+dat_grid_pH_lag1 <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Cond_lag2 = seq(min(RWAR_dosing_lag_incdec$Cond_lag2), max(RWAR_dosing_lag_incdec$Cond_lag2),
+  mutate(pH_lag1 = seq(min(df_train$pH_lag1), max(df_train$pH_lag1),
                                       length.out = 100))
-dat_grid_turb_lag1 <- RWAR_dosing_lag_incdec |> 
+dat_grid_pH_lag2 <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Turb_lag1 = seq(min(RWAR_dosing_lag_incdec$Turb_lag1), max(RWAR_dosing_lag_incdec$Turb_lag1),
+  mutate(pH_lag2 = seq(min(df_train$pH_lag2), max(df_train$pH_lag2),
                                       length.out = 100))
-dat_grid_turb_lag2 <- RWAR_dosing_lag_incdec |> 
+dat_grid_cond_lag1 <- df_train |> 
   summarize(
     across(everything(), mean, na.rm = TRUE)
   ) |> 
   slice(rep(1, 100)) |> 
-  mutate(Turb_lag2 = seq(min(RWAR_dosing_lag_incdec$Turb_lag2), max(RWAR_dosing_lag_incdec$Turb_lag2),
+  mutate(Cond_lag1 = seq(min(df_train$Cond_lag1), max(df_train$Cond_lag1),
+                                      length.out = 100))
+dat_grid_cond_lag2 <- df_train |> 
+  summarize(
+    across(everything(), mean, na.rm = TRUE)
+  ) |> 
+  slice(rep(1, 100)) |> 
+  mutate(Cond_lag2 = seq(min(df_train$Cond_lag2), max(df_train$Cond_lag2),
+                                      length.out = 100))
+dat_grid_turb_lag1 <- df_train |> 
+  summarize(
+    across(everything(), mean, na.rm = TRUE)
+  ) |> 
+  slice(rep(1, 100)) |> 
+  mutate(Turb_lag1 = seq(min(df_train$Turb_lag1), max(df_train$Turb_lag1),
+                                      length.out = 100))
+dat_grid_turb_lag2 <- df_train |> 
+  summarize(
+    across(everything(), mean, na.rm = TRUE)
+  ) |> 
+  slice(rep(1, 100)) |> 
+  mutate(Turb_lag2 = seq(min(df_train$Turb_lag2), max(df_train$Turb_lag2),
                                       length.out = 100))
 
 pred1 <- predict(gam_fit, newdata = dat_grid_dose, type = "response", se.fit = TRUE)
@@ -342,26 +352,96 @@ temp_pred <- dat_grid_temp |> mutate(
   .lower = pred2$fit - 2 * pred2$se.fit,
   .upper = pred2$fit + 2 * pred2$se.fit
 )
-pH_pred <- augment(gam_fit, new_data = dat_grid_pH)
-cond_pred <- augment(gam_fit, new_data = dat_grid_cond)
-turb_pred <- augment(gam_fit, new_data = dat_grid_turb)
-tempLag1_pred <- augment(gam_fit, new_data = dat_grid_temp_lag1)
-tempLag2_pred <- augment(gam_fit, new_data = dat_grid_temp_lag2)
-pHLag1_pred <- augment(gam_fit, new_data = dat_grid_pH_lag1)
-pHLag2_pred <- augment(gam_fit, new_data = dat_grid_pH_lag2)
-condLag1_pred <- augment(gam_fit, new_data = dat_grid_cond_lag1)
-condLag2_pred <- augment(gam_fit, new_data = dat_grid_cond_lag2)
-turbLag1_pred <- augment(gam_fit, new_data = dat_grid_turb_lag1)
-turbLag2_pred <- augment(gam_fit, new_data = dat_grid_turb_lag2)
+pred3 <- predict(gam_fit, newdata = dat_grid_pH, type = "response", se.fit = TRUE)
+pH_pred <- dat_grid_pH |> mutate(
+  .fitted = pred3$fit,
+  .lower = pred3$fit - 2 * pred3$se.fit,
+  .upper = pred3$fit + 2 * pred3$se.fit
+)
+pred4 <- predict(gam_fit, newdata = dat_grid_cond, type = "response", se.fit = TRUE)
+cond_pred <- dat_grid_cond |> mutate(
+  .fitted = pred4$fit,
+  .lower = pred4$fit - 2 * pred4$se.fit,
+  .upper = pred4$fit + 2 * pred4$se.fit
+)
+pred5 <- predict(gam_fit, newdata = dat_grid_turb, type = "response", se.fit = TRUE)
+turb_pred <- dat_grid_turb |> mutate(
+  .fitted = pred5$fit,
+  .lower = pred5$fit - 2 * pred5$se.fit,
+  .upper = pred5$fit + 2 * pred5$se.fit
+)
+pred6 <- predict(gam_fit, newdata = dat_grid_temp_lag1, type = "response", se.fit = TRUE)
+tempLag1_pred <- dat_grid_temp_lag1 |> mutate(
+  .fitted = pred6$fit,
+  .lower = pred6$fit - 2 * pred6$se.fit,
+  .upper = pred6$fit + 2 * pred6$se.fit
+)
+pred7 <- predict(gam_fit, newdata = dat_grid_temp_lag2, type = "response", se.fit = TRUE)
+tempLag2_pred <- dat_grid_temp_lag2 |> mutate(
+  .fitted = pred7$fit,
+  .lower = pred7$fit - 2 * pred7$se.fit,
+  .upper = pred7$fit + 2 * pred7$se.fit
+)
+pred8 <- predict(gam_fit, newdata = dat_grid_pH_lag1, type = "response", se.fit = TRUE)
+pHLag1_pred <- dat_grid_pH_lag1 |> mutate(
+  .fitted = pred8$fit,
+  .lower = pred8$fit - 2 * pred8$se.fit,
+  .upper = pred8$fit + 2 * pred8$se.fit
+)
+pred9 <- predict(gam_fit, newdata = dat_grid_pH_lag2, type = "response", se.fit = TRUE)
+pHLag2_pred <- dat_grid_pH_lag2 |> mutate(
+  .fitted = pred9$fit,
+  .lower = pred9$fit - 2 * pred9$se.fit,
+  .upper = pred9$fit + 2 * pred9$se.fit
+)
+pred10 <- predict(gam_fit, newdata = dat_grid_cond_lag1, type = "response", se.fit = TRUE)
+condLag1_pred <- dat_grid_cond_lag1 |> mutate(
+  .fitted = pred10$fit,
+  .lower = pred10$fit - 2 * pred10$se.fit,
+  .upper = pred10$fit + 2 * pred10$se.fit
+)
+pred11 <- predict(gam_fit, newdata = dat_grid_cond_lag2, type = "response", se.fit = TRUE)
+condLag2_pred <- dat_grid_cond_lag2 |> mutate(
+  .fitted = pred11$fit,
+  .lower = pred11$fit - 2 * pred11$se.fit,
+  .upper = pred11$fit + 2 * pred11$se.fit
+)
+pred12 <- predict(gam_fit, newdata = dat_grid_turb_lag1, type = "response", se.fit = TRUE)
+turbLag1_pred <- dat_grid_turb_lag1 |> mutate(
+  .fitted = pred12$fit,
+  .lower = pred12$fit - 2 * pred12$se.fit,
+  .upper = pred12$fit + 2 * pred12$se.fit
+)
+pred13 <- predict(gam_fit, newdata = dat_grid_turb_lag2, type = "response", se.fit = TRUE)
+turbLag2_pred <- dat_grid_turb_lag2 |> mutate(
+  .fitted = pred13$fit,
+  .lower = pred13$fit - 2 * pred13$se.fit,
+  .upper = pred13$fit + 2 * pred13$se.fit
+)
 
 ```
 
 ```{r}
-ggplot(dose_pred, aes(Polymer_dose, .fitted)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin = .lower, ymax = .upper), alpha = 0.2)
+summary(gam_fit)
 ```
 
+
+```{r}
+ggplot(pred_df) +
+  geom_point(aes(x = FeCl_dose, y = pred), alpha = 0.3) +
+  geom_abline(slope = 1, 
+              intercept = coef(gam_fit)[1],
+              color = 'red',
+              lwd = 1)
+  
+```
+```{r}
+ggplot(df_test) +
+  geom_line(aes(y = FeCl_dose), color = 'orange')
+
+```
+
+The GAM model shows poor performance when making prediction of the dose requirements for water treatment.
 
 
 
