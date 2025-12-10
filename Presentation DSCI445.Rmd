@@ -237,7 +237,32 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
 
 # Coagulant Dose Prediction: Linear Regression
 
-**Ethan: insert table with models attempted**
+- Created 6 models with different predictors and combinations of interaction terms. 
+
+- Used lag variables for temp, ph, conductivity, turbidity
+
+- Dropped Turbidity as it was not a good predictor for FeCL dosing.
+  - Conductivity was also dropped eventually due to being similar to Turbidity
+
+- Difficult to determine what factors of the dataset are driving the predictions.
+
+- RMSE and MAE seem to be all over the place dependent on which predictors are selected and the interactions.
+
+# RMSE & MAE Table
+
+```{r, out.width="80%", out.height="88%"}
+knitr::include_graphics("Images/linear_model_table.png")
+```
+
+
+# Performance
+
+- Performed best with multiple interactions between Conductivity, Temp, and pH
+
+- Still not great predictions, many are overfit and underfit.
+
+- Linear Structure doesn't capture the relations in our predictors, and incorrect predictions could lead to disastorus results if too much or too little chemical is used.
+
 
 # Coagulant Dose Prediction: Decision Tree
 
