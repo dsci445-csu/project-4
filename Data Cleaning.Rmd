@@ -430,6 +430,44 @@ multi_fit |> extract_fit_engine()
 ```
 
 
+```{r}
+library(tidymodels)
+library(dplyr)
+library(lubridate)
+
+df_modeling <- df_lag_incdec |> 
+  mutate(day = yday(Timestamp))
+
+lm_model_spec <- linear_reg() |>
+  set_engine("lm") |>
+  set_mode("regression")
+
+lm_recipe <- 
+  recipe(FeCl_dose ~ day, data = df_modeling) |>
+  step_poly(day, degree = 10)
+
+lm_workflow <- workflow() |>
+  add_model(lm_model_spec) |>
+  add_recipe(lm_recipe)
+
+lm_fit_result <- fit(lm_workflow, data = df_modeling)
+
+predictions <- predict(lm_fit_result, new_data = df_modeling) |>
+  bind_cols(df_modeling |> select(FeCl_dose))
+
+rmse_result <- predictions |>
+  rmse(truth = FeCl_dose, estimate = .pred)
+
+mae_result <- predictions |>
+  mae(truth = FeCl_dose, estimate = .pred)
+
+print(rmse_result)
+print(mae_result)
+
+
+```
+
+
 
 ```{r}
 # Look at performance of a model that simply pulls previous year dose
