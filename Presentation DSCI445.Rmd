@@ -83,12 +83,14 @@ Three years of data from 2018-2020, provided by a Colorado water treatment plant
    
 # Data Cleaning
 
-- Daily averages were taken for raw water data to match the dosing data's daily timestep 
-- Merged various datasets into a final cleaned dataset
-- Various large outliers (likely caused by equipment malfunction) were removed
-- Temperature outliers were interpolated to nearest adjacent values
-- Suspended grain size was not used as it was highly variable
-- Alkalinity and hardness were not used because of missing data chunks and differing time ranges
+- Dropped Data  
+   - Suspended grain size was not used as it was highly variable
+   - Alkalinity and hardness were not used because of missing data chunks and differing time ranges
+
+- Processing
+   - Daily averages were taken for raw water data to match the dosing data's timestep
+   - Significant outliers (likely caused by equipment malfunction) were removed or interpolated
+   - Dosing and raw water data merged
 
 # Exploratory Analysis
 
@@ -119,55 +121,27 @@ print(plot_FeCl)
 
 # Exploratory Analysis
 
-```{r, fig.width=7, fig.height=2}
+```{r, fig.width=7, fig.height=4}
 
-plot_pH <- ggplot(df_lag_incdec, aes(x = Timestamp,
-                           y = mean_pH,
-                           color = mean_pH)) +
-  geom_line() + 
-  scale_color_gradient(low = 'blue', high = 'red') +
+df_lag_incdec_long <- df_lag_incdec |>
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value)) +
+  geom_point(size = 0.5, color="blue") +
+  facet_wrap(~Characteristics, scales = "free_y") +
   theme_minimal() +
-  ggtitle("Average pH")
-
-print(plot_pH)
-
-plot_temp <- ggplot(df_lag_incdec, aes(x = Timestamp,
-                           y = mean_Temp,
-                           color = mean_Temp)) +
-  geom_line() + 
-  scale_color_gradient(low = 'blue', high = 'red') +
-  theme_minimal() +
-  ggtitle("Water Temperature")
-
-print(plot_temp)
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Raw Water Characteristics"
+  )
 
 ```
 
-# Exploratory Analysis
-
-```{r, fig.width=7, fig.height=2}
-
-plot_cond <- ggplot(df_lag_incdec, aes(x = Timestamp,
-                           y = mean_Conductivity,
-                           color = mean_Conductivity)) +
-  geom_line() + 
-  scale_color_gradient(low = 'purple', high = 'yellow') +
-  theme_minimal() +
-  ggtitle("Water Conductivity")
-
-print(plot_cond)
-
-plot_turb <- ggplot(df_lag_incdec, aes(x = Timestamp,
-                           y = mean_Turbidity,
-                           color = mean_Turbidity)) +
-  geom_line() + 
-  scale_color_gradient(low = 'black', high = 'orange') +
-  theme_minimal() +
-  ggtitle("Water Turbidity")
-
-print(plot_turb)
-
-```
 
 # Predictor Selection
 
