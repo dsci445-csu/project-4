@@ -1,0 +1,467 @@
+---
+title: "Predicting Water Treatment Plant Chemical Doses"
+author: "Ethan Schilling, Joshua Tobey, Dawson Carney, Reece Carmody"
+date: "11 December 2025"
+aspectratio: 169
+output: 
+  beamer_presentation:
+    theme: "Warsaw"
+    colortheme: "default"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, include=F}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(ggplot2)
+library(zoo)
+library(purrr)
+library(knitr)
+library(patchwork)
+library(tidyverse)
+library(tidymodels)
+library(rpart.plot)
+library(kableExtra)
+library(vip)
+library(png)
+library(grid)
+```
+
+
+# Background and Motivation
+
+The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. 
+
+```{r}
+img_array = readPNG("Images/treatmentplot1.png")
+grid.raster(img_array)
+```
+
+# Background and Motivation
+
+**One role of an operator in the water treatment process is to
+look at a wide array of data and make decisions about how to adjust
+chemical doses.**    
+
+```{r}
+img_array = readPNG("Images/treatmentplot2.png")
+grid.raster(img_array)
+```
+
+# Background and Motivation
+
+**OUR GOAL: Create a model that serves the role of an "operator," taking raw water data and making predictions of chemical doses.**
+
+```{r}
+img_array = readPNG("Images/treatmentplot3.png")
+grid.raster(img_array)
+```
+
+# Data Overview
+
+Three years of data from 2018-2020, provided by a Colorado water treatment plant.
+
+- Raw Water Data
+   - pH
+   - Temperature (of the water)
+   - Turbidity
+   - Conductivity
+   - Suspended Grain Size
+   - Alkalinity
+   - Hardness
+   
+- Chemical Dosing Data
+   - Ferric Chloride Dose: primary additive
+   - Cationic Polymer Dose: secondary additive
+   
+# Data Cleaning
+
+- Dropped Data  
+   - Suspended grain size was not used as it was highly variable
+   - Alkalinity and hardness were not used because of missing data chunks and differing time ranges
+
+- Processing
+   - Daily averages were taken for raw water data to match the dosing data's timestep
+   - Significant outliers (likely caused by equipment malfunction) were removed or interpolated
+   - Dosing and raw water data merged
+
+# Exploratory Analysis
+
+```{r, fig.width=7, fig.height=2}
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |>
+  mutate(Timestamp = ymd(Timestamp))
+
+plot_polymer <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = Polymer_dose,
+                           color = Polymer_dose)) +
+  geom_line() + 
+  scale_color_gradient(low = 'yellow', high = 'green') +
+  theme_minimal() +
+  ggtitle("Polymer Coagulant")
+
+print(plot_polymer)
+
+plot_FeCl <- ggplot(df_lag_incdec, aes(x = Timestamp,
+                           y = FeCl_dose,
+                           color = FeCl_dose)) +
+  geom_line() + 
+  scale_color_gradient(low = 'blue', high = 'orange') +
+  theme_minimal() +
+  ggtitle("FeCl Coagulant")
+
+print(plot_FeCl)
+```
+
+# Exploratory Analysis
+
+```{r, fig.width=7, fig.height=4}
+
+df_lag_incdec_long <- df_lag_incdec |>
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value)) +
+  geom_point(size = 0.5, color="blue") +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    title = "Raw Water Characteristics"
+  )
+
+```
+
+
+# Predictor Selection
+
+Temperature and pH seem to have the strongest relationship to dose, consistent with feedback from treatment plant operators. Other data were either highly variable or had minimum availability with large gaps. We will focus on the following to predict dose:   
+   
+- pH
+- Temperature
+- Conductivity (lots of noise, weaker)
+- Turbidity (lots of noise, weaker)
+
+Focus: **FeCl Dose**. Polymer dose is not changed significantly in plants.
+
+# Added Variables
+
+Similar to the stock dataset we've seen in labs and homeworks, our time series dataset needs **lagged variables**.   
+   
+- For each of the main four parameters:
+   - Introduce two lagged variables
+   - First represents the day before
+   - Second represents two days before
+   
+We also introduced a **categorical predictor** indicating whether the dose increased, decreased, or stayed the same compared to the day before.
+   
+# Summary of Models
+
+**Priorities: Interpretability, Capturing of Nonlinear Behavior**
+  
+- Training and Testing
+   - Training: 2018-2019
+   - Testing: 2020
+   - Approximately 70/30 split
+- Coagulant Dose Prediction
+   - Linear Regression
+   - Tree-based Models
+   - GAM
+- Coagulant Dose Change Prediction
+   - Multinomial Classification
+   - LDA, QDA
+   - Random Forest
+
+# Coagulant Dose Prediction
+
+**GOAL: Predict coagulant doses based on raw water characteristics.**
+
+```{r, fig.width=7, fig.height=3}
+
+df_lag_incdec_long <- df_lag_incdec |>
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Raw Water Characteristics Over Time Colored by Dosing"
+  )
+
+```
+
+# Coagulant Dose Prediction: Linear Regression
+
+- Created 6 models with different predictors and combinations of interaction terms. 
+
+- Used lag variables for temp, ph, conductivity, turbidity
+
+- Dropped Turbidity as it was not a good predictor for FeCL dosing.
+  - Conductivity was also dropped eventually due to being similar to Turbidity
+
+- Difficult to determine what factors of the dataset are driving the predictions.
+
+- RMSE and MAE seem to be all over the place dependent on which predictors are selected and the interactions.
+
+# RMSE & MAE Table
+
+```{r, out.width="80%", out.height="88%"}
+knitr::include_graphics("Images/linear_model_table.png")
+```
+
+
+# Performance
+
+- Performed best with multiple interactions between Conductivity, Temp, and pH
+
+- Still not great predictions, many are overfit and underfit.
+
+- Linear Structure doesn't capture the relations in our predictors, and incorrect predictions could lead to disastorus results if too much or too little chemical is used.
+
+
+# Coagulant Dose Prediction: Decision Tree
+
+```{r, fig.width=5, fig.height=2.5}
+set.seed(445)
+
+# Decision Tree
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+tree_depth = 5 # tree depth
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+tree_spec = decision_tree(tree_depth = tree_depth, min_n = min_n) %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(tree_spec)
+
+fit_tree = workflow %>%
+  fit(data = train_data)
+
+# Plot the tree
+
+fit_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+
+# Assess accuracy
+
+predictions = fit_tree %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+rmse = sqrt(mean((actual - predicted)^2))
+r_squared = cor(actual, predicted)^2
+mae = mean(abs(actual-predicted))
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+
+```
+
+# Coagulant Dose Prediction: Random Forest
+
+```{r, fig.width=5, fig.height=2.1}
+set.seed(445)
+
+# Random Forest
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+trees = 500 # number of trees in the forest
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+rf_spec = rand_forest(trees = trees, min_n = min_n) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(rf_spec)
+
+fit_rf = workflow %>%
+  fit(data = train_data)
+
+# Assess accuracy
+
+predictions = fit_rf %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+# Metrics and plots
+
+# Metrics and plots
+
+model_metrics = predictions %>%
+  metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+rmse = model_metrics$.estimate[1]
+r_squared = model_metrics$.estimate[2]
+mae = model_metrics$.estimate[3]
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+vip(fit_rf, num_features = 20) +
+  geom_col(color = "black", fill = "coral") +
+  labs(
+    title = "Feature Importance (Random Forest)",
+    x = "Importance",
+    y = "Feature"
+  ) +
+  theme_minimal(base_size = 9)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+
+```
+
+
+# Coagulant Dose Change Prediction
+
+**GOAL: Predict whether coagulant dose increased, decreased, or stayed the same based on raw water characteristics.**
+
+```{r, fig.width=7, fig.height=3}
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "FeCl_change",
+    shape = "FeCl_change",
+    title = "Raw Water Characteristics Colored by Dose Change"
+  )
+
+```
+
+
+# Coagulant Dose Change Prediction: Multinomial, LDA/QDA
+
+
+
+# Coagulant Dose Change Prediction: Random Forest
+
+
+# Summary of Dose Prediction Models
+
+__ performed the best out of models tested.
+
+**Insert bar graph/brief conclusions**
+
+# Summary of Dose Change Prediction Models
+
+Overall ineffective, and prone to overfitting (especially random forest).  
+Model predicting no dose change would be more accurate.  
+
+**Insert bar graph**
+
+# Conclusion and Possible Next Steps
+
+- Predicting chemical doses based on these raw water characteristics proved to be ineffective
+- Most likely reasons:
+   - Limited size of dataset
+   - Limited predictor set
+   - Operator-dependent
+   - Complexity of chemical relationships
+   - Other factors (example: reservoir turnover)
+- Operators make decisions based on variety of other factors: chemical waste production, filter performance, lab tests, etc.
+- Incorporate more varieties and time ranges of data in future modeling efforts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

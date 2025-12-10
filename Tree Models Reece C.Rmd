@@ -1,0 +1,169 @@
+---
+title: "Tree Models"
+output: pdf_document
+---
+
+```{r}
+set.seed(445)
+
+library(dplyr)
+library(tidyverse)
+library(tidymodels)
+library(rpart.plot)
+library(knitr)
+library(kableExtra)
+
+# Decision Tree
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+tree_depth = 5 # tree depth
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+tree_spec = decision_tree(tree_depth = tree_depth, min_n = min_n) %>%
+  set_engine("rpart") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(tree_spec)
+
+fit_tree = workflow %>%
+  fit(data = train_data)
+
+# Assess accuracy
+
+predictions = fit_tree %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+rmse = sqrt(mean((actual - predicted)^2))
+r_squared = cor(actual, predicted)^2
+mae = mean(abs(actual-predicted))
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+
+# Plot the tree
+
+fit_tree %>%
+  extract_fit_engine() %>%
+  rpart.plot(roundint = FALSE)
+
+```
+
+```{r}
+set.seed(445)
+
+library(dplyr)
+library(tidyverse)
+library(tidymodels)
+library(vip)
+library(knitr)
+library(kableExtra)
+
+# Random Forest
+
+# For now just predicting numerical amounts, not classifying
+data = read.csv("RWAR_dosing_lag_incdec.csv")
+data = as.data.frame(data)
+data$FeCl_change = NULL
+data$Polymer_change = NULL
+
+# Set up training & testing data
+
+# Can change these if you want to modify the tree/data
+trees = 500 # number of trees in the forest
+min_n = 50 # minimum observations needed to further split
+
+train_data = data %>%
+  filter(year(Timestamp) <= 2019)
+test_data = data %>%
+  filter(year(Timestamp) >= 2020)
+
+# Create the tree
+
+recipe = recipe(FeCl_dose ~ ., data = train_data) %>% # Change target variable here
+  step_rm(Timestamp) %>%
+  step_rm(Polymer_dose) # Remove the other target variable here
+
+rf_spec = rand_forest(trees = trees, min_n = min_n) %>%
+  set_engine("ranger", importance = "impurity") %>%
+  set_mode("regression")
+
+workflow = workflow() %>%
+  add_recipe(recipe) %>%
+  add_model(rf_spec)
+
+fit_rf = workflow %>%
+  fit(data = train_data)
+
+# Assess accuracy
+
+predictions = fit_rf %>%
+  predict(test_data) %>%
+  bind_cols(test_data)
+
+actual = predictions$`FeCl_dose` # Change target variable here
+predicted = predictions$.pred
+
+# Metrics and plots
+
+model_metrics = predictions %>%
+  metrics(truth = FeCl_dose, estimate = .pred) # Change target variable here
+rmse = model_metrics$.estimate[1]
+r_squared = model_metrics$.estimate[2]
+mae = model_metrics$.estimate[3]
+
+metrics = data.frame(
+  Metric = c("RMSE", "R-Squared", "MAE"),
+  Value  = c(rmse, r_squared, mae)
+)
+
+kable(metrics, booktabs = TRUE, digits = 3) %>%
+  kable_styling(position = "center", font_size = 12)
+model_metrics$.estimate
+
+#ggplot(predictions, aes(x = FeCl_dose, y = .pred)) +
+#  geom_point() +
+#  geom_abline(intercept = 0, slope = 1) +
+#  labs(title = "Random Forest Accuracy",
+#       x = "Actual",
+#       y = "Predicted") +
+#  theme_bw()
+
+vip(fit_rf, num_features = 20) +
+  geom_col(color = "black", fill = "coral") +
+  labs(
+    title = "Feature Importance (Random Forest)",
+    x = "Importance",
+    y = "Feature"
+  ) +
+  theme_minimal(base_size = 14)
+```

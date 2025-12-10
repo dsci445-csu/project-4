@@ -27,6 +27,12 @@ library(knitr)
 library(patchwork) ## plot arrangement
 library(parsnip)
 library(discrim)
+library(nnet)
+library(broom)
+library(dplyr)
+library(kableExtra)
+library(tibble)
+
 ```
 
 
@@ -292,7 +298,7 @@ df_test  <- df_full |> filter(year(Timestamp) == 2020)
 set.seed(445)
 
 ## RANDOM FOREST
-rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees=500, min_n=1) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("classification")
 
@@ -324,7 +330,7 @@ rf_fit |>
 
 ## Notes
 # 34% accuracy for all predictors
-# 47% accuracy for just temperature and pH
+# 46.6% accuracy for just temperature and pH
 
 ```
 
@@ -385,7 +391,82 @@ qda_fit |>
 
 ```
 
+```{r}
 
+## MULTINOMIAL REGRESSION
+multi_model <- multinom_reg() |>
+  set_engine("nnet") |>
+  set_mode("classification")
+
+multi_recipe1 <- recipe(FeCl_change ~ mean_Temp + Temp_lag1 + Temp_lag2 + mean_pH + pH_lag1 + pH_lag2 + mean_Conductivity + Cond_lag1 + Cond_lag2, data = df_train) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+multi_recipe <- multi_recipe1
+
+multi_workflow <- workflow() |>
+  add_recipe(multi_recipe) |>
+  add_model(multi_model)
+
+multi_fit <- fit(multi_workflow, data = df_train)
+
+df_pred_class <- predict(multi_fit, new_data = df_test, type = "class") |>
+  bind_cols(df_test |> select(FeCl_change))
+df_pred_probs <- predict(multi_fit, new_data = df_test, type = "prob") |>
+  bind_cols(df_test |> select(FeCl_change))
+
+accuracy_result <- metrics(df_pred_class, truth = FeCl_change, estimate = .pred_class) |> 
+  filter(.metric == "accuracy")
+confusion_matrix <- conf_mat(df_pred_class, truth = FeCl_change, estimate = .pred_class)
+
+# results
+print(accuracy_result)
+print(confusion_matrix) |> kable()
+
+multi_fit |> extract_fit_engine()
+
+## NOTES
+# turbidity is highly variable and does not help
+
+```
+
+
+```{r}
+library(tidymodels)
+library(dplyr)
+library(lubridate)
+
+df_modeling <- df_lag_incdec |> 
+  mutate(day = yday(Timestamp))
+
+lm_model_spec <- linear_reg() |>
+  set_engine("lm") |>
+  set_mode("regression")
+
+lm_recipe <- 
+  recipe(FeCl_dose ~ day, data = df_modeling) |>
+  step_poly(day, degree = 10)
+
+lm_workflow <- workflow() |>
+  add_model(lm_model_spec) |>
+  add_recipe(lm_recipe)
+
+lm_fit_result <- fit(lm_workflow, data = df_modeling)
+
+predictions <- predict(lm_fit_result, new_data = df_modeling) |>
+  bind_cols(df_modeling |> select(FeCl_dose))
+
+rmse_result <- predictions |>
+  rmse(truth = FeCl_dose, estimate = .pred)
+
+mae_result <- predictions |>
+  mae(truth = FeCl_dose, estimate = .pred)
+
+print(rmse_result)
+print(mae_result)
+
+
+```
 
 
 

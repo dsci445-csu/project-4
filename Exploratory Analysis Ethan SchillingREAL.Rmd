@@ -1,0 +1,284 @@
+---
+title: "Exploratory Analysis Ethan Schilling"
+output: html_document
+---
+
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(tidymodels)
+library(dplyr)
+library(Metrics)
+library(kableExtra)
+
+```
+
+```{r}
+
+TDS_unfilt <- read_csv("~/DSCI445/project-4/RWAR_TDS.csv")
+TOC_unfilt <- read_csv("~/DSCI445/project-4/RWAR_TOC.csv")
+DOC_unfilt <- read_csv("~/DSCI445/project-4/RWAR_DOC.csv")
+
+df_TDS <- TDS_unfilt %>%
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+
+TDS_plot <- ggplot(df_TDS, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Total Dissolved Solids mg/L", title = "Total Dissolved Solids over Time")
+
+
+df_TOC <- TOC_unfilt %>% 
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+  
+TOC_plot <- ggplot(df_TOC, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Total Organinc Carbon mg/L", title = "Total Organic Carbon over Time")
+
+df_DOC <- DOC_unfilt %>%
+  rename(date = 1, value = 2) %>%
+  mutate(date = as.Date(date, format = "%d-%b-%y"))
+
+
+DOC_plot <- ggplot(df_DOC, aes(x = date, y = value)) +
+  geom_line() +
+  labs(x = "Date", y = "Dissolved Organic Carbon mg/L", title = "Dissolved Organic Carbon over Time")
+
+
+#saveRDS(TDS_plot,"TDS_plot.rds")
+#saveRDS(TOC_plot,"TOC_plot.rds")
+#saveRDS(DOC_plot,"DOC_plot.rds")
+
+TDS_plot
+TOC_plot
+DOC_plot
+
+
+```
+
+
+
+```{r}
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(Metrics)
+library(kableExtra)
+library(gt)
+
+
+dosing_data <- read.csv("~/DSCI445/project-4/RWAR_dosing_cleaned.csv")
+
+
+
+dosing_long <- dosing_data %>%
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(dosing_long, aes(x = Timestamp, y = Value, color = Ferric.chloride..mg.L)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Water Quality Characteristics Over Time by Dosing"
+  )
+
+
+
+RWAR_dosing <- read.csv("~/DSCI445/project-4/RWAR_dosing_lag_incdec.csv")
+
+RWAR_dosing
+
+
+RWAR_dosing <- RWAR_dosing %>% 
+  mutate(Timestamp = ymd(Timestamp),
+         Year = year(Timestamp))
+
+RWAR_dosing
+
+
+train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
+test  <- RWAR_dosing %>% filter(Year == 2020)
+
+
+# All predictors
+
+model0 <- lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 + Turb_lag1 + Turb_lag2, data = train)
+
+test$pred_model0 <- predict(model0, newdata = test)
+
+
+
+
+# 1 Interaction Term
+
+model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +     Turb_lag2,data = train)
+summary(model1)
+
+
+test$pred_model1 <- predict(model1, newdata = test)
+
+
+
+    
+
+# 2 Interaction Terms
+
+model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train)
+
+test$pred_model2 <- predict(model2, newdata = test)
+
+
+
+
+model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train)
+
+test$pred_model3 <- predict(model3, newdata = test)
+
+
+
+
+
+# 2 Interactions: Cond and PH and Temp and Cond
+
+model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train)
+
+test$pred_model4 <- predict(model4, newdata = test)
+
+
+
+
+
+model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+
+
+test$pred_model5 <- predict(model5, newdata = test)
+
+
+
+models <- list(
+  model0 = lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 +
+                Turb_lag1 + Turb_lag2, data = train),
+  
+  model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +
+                Turb_lag2,data = train),
+  
+  model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train),
+  
+  model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train),
+  
+  model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train),
+  
+  model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+)
+
+
+descriptions <- c(
+  "Main effects only",
+  "Temp × pH interaction",
+  "Temp × pH + Cond × Turb interactions",
+  "Temp × Cond interaction",
+  "Cond × pH + Temp × Cond interactions",
+  "Only Temp and pH"
+)
+
+performance <- data.frame(Model = character(),
+                          RMSE = numeric(),
+                          MAE = numeric(),
+                          Description = character(),
+                          stringsAsFactors = FALSE)
+
+
+for(i in 1:length(models)) {
+  pred <- predict(models[[i]], newdata = test)
+  performance <- rbind(performance,
+                       data.frame(Model = paste0("Model ", i-1),
+                                  RMSE = round(Metrics::rmse(test$FeCl_dose, pred), 3),
+                                  MAE  = round(Metrics::mae(test$FeCl_dose, pred), 3),
+                                  Description = descriptions[i],
+                                  stringsAsFactors = FALSE))
+
+}
+  performance <- performance %>% arrange(RMSE)
+
+
+best_rmse <- min(performance$RMSE)
+
+kable_table <- performance %>%
+  kable("html", caption = "Model Performance Summary") %>%
+  kable_styling(full_width = F, position = "center") %>%
+  row_spec(which(performance$RMSE == best_rmse), background = "#cfe2f3")  
+
+kable_table
+
+
+p3 <- ggplot(test, aes(x = FeCl_dose, y = pred_model3)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 3: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p4 <- ggplot(test, aes(x = FeCl_dose, y = pred_model4)) +
+  geom_point(color = "green") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 4: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p3
+p4
+
+
+```
+
+
+
+# Coagulant Dose Prediction Linear Regression
+
+```{r}
+knitr::include_graphics("Images/linear_model_table.png")
+```
+
+
+
+## Regression Models
+
+- Created 6 models with different predictors and combinations of interaction terms. 
+
+- Dropped Turbidity as it was not a good predictor for FeCL dosing.
+
+- Difficult to determine what factors of the dataset are driving the predictions.
+
+
+### Performance
+
+- Performed best with multiple interactions between Conductivity, Temp, and pH
+
+- Still not great predictions many are overfit and underfit.
+
+- Linear Structure doesn't capture the relations in our predictors
+
