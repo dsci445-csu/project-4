@@ -65,6 +65,8 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(Metrics)
+library(kableExtra)
+library(gt)
 
 
 dosing_data <- read.csv("~/DSCI445/project-4/RWAR_dosing_cleaned.csv")
@@ -114,104 +116,118 @@ model0 <- lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidit
 
 test$pred_model0 <- predict(model0, newdata = test)
 
-cat("Model 0 RMSE:", rmse(test$FeCl_dose, test$pred_model0), "\n")
-cat("Model 0 MAE :", mae(test$FeCl_dose, test$pred_model0), "\n")
 
 
 
 # 1 Interaction Term
 
-model1 <- lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1 + Turb_lag1, 
-             data = train)
+model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +     Turb_lag2,data = train)
 summary(model1)
 
 
 test$pred_model1 <- predict(model1, newdata = test)
 
-cat("Model 1 RMSE:", rmse(test$FeCl_dose, test$pred_model1), "\n")
-cat("Model 1 MAE :", mae(test$FeCl_dose, test$pred_model1), "\n")
+
 
     
 
 # 2 Interaction Terms
 
-model2 <- lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train)
 
 test$pred_model2 <- predict(model2, newdata = test)
 
-cat("Model 2 RMSE:", rmse(test$FeCl_dose, test$pred_model2), "\n")
-cat("Model 2 MAE :", mae(test$FeCl_dose, test$pred_model2), "\n")
 
 
-model3 <- lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+
+model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train)
 
 test$pred_model3 <- predict(model3, newdata = test)
 
-cat("Model 3 RMSE:", rmse(test$FeCl_dose, test$pred_model3), "\n")
-cat("Model 3 MAE :", mae(test$FeCl_dose, test$pred_model3), "\n")
+
+
+
 
 # 2 Interactions: Cond and PH and Temp and Cond
 
-model4 <- lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, data = train)
+model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train)
 
 test$pred_model4 <- predict(model4, newdata = test)
 
-cat("Model 4 RMSE:", rmse(test$FeCl_dose, test$pred_model4), "\n")
-cat("Model 4 MAE :", mae(test$FeCl_dose, test$pred_model4), "\n")
 
 
-model_descriptions <- c(
+
+
+model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+
+
+test$pred_model5 <- predict(model5, newdata = test)
+
+
+
+models <- list(
+  model0 = lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 +
+                Turb_lag1 + Turb_lag2, data = train),
+  
+  model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +
+                Turb_lag2,data = train),
+  
+  model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train),
+  
+  model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train),
+  
+  model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train),
+  
+  model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+)
+
+
+descriptions <- c(
   "Main effects only",
   "Temp × pH interaction",
   "Temp × pH + Cond × Turb interactions",
   "Temp × Cond interaction",
-  "Cond × pH + Temp × Cond interactions"
+  "Cond × pH + Temp × Cond interactions",
+  "Only Temp and pH"
 )
 
-results <- data.frame(
-  Model = paste0("Model ", 0:4),
-  RMSE = c(
-    rmse(test$FeCl_dose, test$pred_model0),
-    rmse(test$FeCl_dose, test$pred_model1),
-    rmse(test$FeCl_dose, test$pred_model2),
-    rmse(test$FeCl_dose, test$pred_model3),
-    rmse(test$FeCl_dose, test$pred_model4)
-  ),
-  MAE = c(
-    mae(test$FeCl_dose, test$pred_model0),
-    mae(test$FeCl_dose, test$pred_model1),
-    mae(test$FeCl_dose, test$pred_model2),
-    mae(test$FeCl_dose, test$pred_model3),
-    mae(test$FeCl_dose, test$pred_model4)
-  ),
-  Description = model_descriptions
-)
+performance <- data.frame(Model = character(),
+                          RMSE = numeric(),
+                          MAE = numeric(),
+                          Description = character(),
+                          stringsAsFactors = FALSE)
 
 
-results <- results %>%
-  mutate(
-    RMSE = round(RMSE, 3),
-    MAE  = round(MAE, 3)
-  ) %>%
-  arrange(RMSE)
+for(i in 1:length(models)) {
+  pred <- predict(models[[i]], newdata = test)
+  performance <- rbind(performance,
+                       data.frame(Model = paste0("Model ", i-1),
+                                  RMSE = round(rmse(test$FeCl_dose, pred), 3),
+                                  MAE  = round(mae(test$FeCl_dose, pred), 3),
+                                  Description = descriptions[i],
+                                  stringsAsFactors = FALSE))
+
+}
+  performance <- performance %>% arrange(RMSE)
 
 
+best_rmse <- min(performance$RMSE)
 
-best_rmse <- min(results$RMSE)
-best_mae  <- min(results$MAE)
- 
+kable_table <- performance %>%
+  kable("html", caption = "Model Performance Summary") %>%
+  kable_styling(full_width = F, position = "center") %>%
+  row_spec(which(performance$RMSE == best_rmse), background = "#cfe2f3")  
 
-results %>%
-  kable("html", caption = "Model Performance Summary ") %>%
-  kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed"),
-    full_width = FALSE,
-    position = "center"
-  ) %>%
-  column_spec(1, bold = TRUE) %>%
-  column_spec(4, width = "20em") %>%
-  row_spec(which(results$RMSE == best_rmse), background = "#d4edda") %>%  
-  row_spec(which(results$MAE == best_mae), background = "#cfe2f3")  
+kable_table
 
 ```
 
