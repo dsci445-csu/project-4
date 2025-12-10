@@ -10,6 +10,7 @@ library(knitr)
 library(tidymodels)
 library(dplyr)
 library(Metrics)
+library(kableExtra)
 ```
 
 ```{r}
@@ -45,15 +46,15 @@ DOC_plot <- ggplot(df_DOC, aes(x = date, y = value)) +
   labs(x = "Date", y = "Dissolved Organic Carbon mg/L", title = "Dissolved Organic Carbon over Time")
 
 
-saveRDS(TDS_plot,"TDS_plot.rds")
-saveRDS(TOC_plot,"TOC_plot.rds")
-saveRDS(DOC_plot,"DOC_plot.rds")
+#saveRDS(TDS_plot,"TDS_plot.rds")
+#saveRDS(TOC_plot,"TOC_plot.rds")
+#saveRDS(DOC_plot,"DOC_plot.rds")
 
 TDS_plot
 TOC_plot
 DOC_plot
 
-getwd()
+
 ```
 
 
@@ -106,6 +107,18 @@ RWAR_dosing
 train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
 test  <- RWAR_dosing %>% filter(Year == 2020)
 
+
+# All predictors
+
+model0 <- lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 + Turb_lag1 + Turb_lag2, data = train)
+
+test$pred_model0 <- predict(model0, newdata = test)
+
+cat("Model 0 RMSE:", rmse(test$FeCl_dose, test$pred_model0), "\n")
+cat("Model 0 MAE :", mae(test$FeCl_dose, test$pred_model0), "\n")
+
+
+
 # 1 Interaction Term
 
 model1 <- lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1 + Turb_lag1, 
@@ -147,6 +160,58 @@ cat("Model 4 RMSE:", rmse(test$FeCl_dose, test$pred_model4), "\n")
 cat("Model 4 MAE :", mae(test$FeCl_dose, test$pred_model4), "\n")
 
 
-```
+model_descriptions <- c(
+  "Main effects only",
+  "Temp × pH interaction",
+  "Temp × pH + Cond × Turb interactions",
+  "Temp × Cond interaction",
+  "Cond × pH + Temp × Cond interactions"
+)
 
+results <- data.frame(
+  Model = paste0("Model ", 0:4),
+  RMSE = c(
+    rmse(test$FeCl_dose, test$pred_model0),
+    rmse(test$FeCl_dose, test$pred_model1),
+    rmse(test$FeCl_dose, test$pred_model2),
+    rmse(test$FeCl_dose, test$pred_model3),
+    rmse(test$FeCl_dose, test$pred_model4)
+  ),
+  MAE = c(
+    mae(test$FeCl_dose, test$pred_model0),
+    mae(test$FeCl_dose, test$pred_model1),
+    mae(test$FeCl_dose, test$pred_model2),
+    mae(test$FeCl_dose, test$pred_model3),
+    mae(test$FeCl_dose, test$pred_model4)
+  ),
+  Description = model_descriptions
+)
+
+
+results <- results %>%
+  mutate(
+    RMSE = round(RMSE, 3),
+    MAE  = round(MAE, 3)
+  ) %>%
+  arrange(RMSE)
+
+
+
+best_rmse <- min(results$RMSE)
+best_mae  <- min(results$MAE)
+ 
+
+results %>%
+  kable("html", caption = "Model Performance Summary ") %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  column_spec(1, bold = TRUE) %>%
+  column_spec(4, width = "20em") %>%
+  row_spec(which(results$RMSE == best_rmse), background = "#d4edda") %>%  
+  row_spec(which(results$MAE == best_mae), background = "#cfe2f3")  
+
+```
 
