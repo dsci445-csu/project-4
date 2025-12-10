@@ -1,7 +1,8 @@
 ---
-title: "DSCI 445 Presentation"
+title: "Predicting Water Treatment Plant Chemical Doses"
 author: "Ethan Schilling, Joshua Tobey, Dawson Carney, Reece Carmody"
-date: "2025-12-11"
+date: "11 December 2025"
+aspectratio: 169
 output: 
   beamer_presentation:
     theme: "Warsaw"
@@ -12,6 +13,7 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
+
 
 ```{r, include=F}
 library(dplyr)
@@ -28,53 +30,43 @@ library(tidymodels)
 library(rpart.plot)
 library(kableExtra)
 library(vip)
+library(png)
+library(grid)
 ```
 
-# Example Slide Title
 
-Example text.
+# Background and Motivation
 
-- Bullet points
-- Bullet points
-
-## New section of text
-
-More example text
+The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. 
 
 ```{r}
-#readRDS("TOC_plot.rds")
-#readRDS("TDS_plot.rds")
+img_array = readPNG("Images/treatmentplot1.png")
+grid.raster(img_array)
 ```
 
 # Background and Motivation
 
-The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. There are four primary steps of the water treatment process:   
-   
-1. Coagulation - Chemicals ("coagulants") are added to raw water to help contaminants
-group together into "floc" particles  
-2. Flocculation - The water is then slowly mixed to allow these floc particles to grow  
-3. Filtration - These particles are filtered out  
-4. Disinfection - Water is disinfected to get rid of biological contaminants  
-  
-This project will focus on Step 1. These chemical doses are one of the most important
-features of the treatment process that an operator can change to improve performance.
+**One role of an operator in the water treatment process is to
+look at a wide array of data and make decisions about how to adjust
+chemical doses.**    
+
+```{r}
+img_array = readPNG("Images/treatmentplot2.png")
+grid.raster(img_array)
+```
 
 # Background and Motivation
 
-**The role of an operator in deciding water treatment plant chemical doses is to
-look at a wide array of factors and make decisions about how to adjust
-chemical doses.**   
-   
-- Treatment plant conditions change rapidly
-- A predictive tool to help select chemical doses is beneficial both financially and environmentally
+**OUR GOAL: Create a model that serves the role of an "operator," taking raw water data and making predictions of chemical doses.**
 
 ```{r}
-# Add explanation picture/plot to help people visualize here??
+img_array = readPNG("Images/treatmentplot3.png")
+grid.raster(img_array)
 ```
 
 # Data Overview
 
-Three years of data from 2018-2020, provided by a water treatment plant in Aurora, Colorado.
+Three years of data from 2018-2020, provided by a Colorado water treatment plant.
 
 - Raw Water Data
    - pH
@@ -91,11 +83,12 @@ Three years of data from 2018-2020, provided by a water treatment plant in Auror
    
 # Data Cleaning
 
-- Features were averaged to match the dosing data's daily increments 
+- Daily averages were taken for raw water data to match the dosing data's daily timestep 
 - Merged various datasets into a final cleaned dataset
-- Various outliers (likely caused by equipment malfunction) were either removed or interpolated
-- Suspended Grain Size was not used as it was highly variable
-- Alkalinity and Hardness was not used because of missing data chunks and differing time ranges
+- Various large outliers (likely caused by equipment malfunction) were removed
+- Temperature outliers were interpolated to nearest adjacent values
+- Suspended grain size was not used as it was highly variable
+- Alkalinity and hardness were not used because of missing data chunks and differing time ranges
 
 # Exploratory Analysis
 
@@ -178,25 +171,73 @@ print(plot_turb)
 
 # Predictor Selection
 
-Generally, temperature and pH seem to have the strongest relationship. This coincides with feedback from treatment plant operators. For further analysis, we will use:   
+Temperature and pH seem to have the strongest relationship to dose, consistent with feedback from treatment plant operators. Other data were either highly variable or had minimum availability with large gaps. We will focus on the following to predict dose:   
    
 - pH
 - Temperature
-- Conductivity
-- Turbidity
+- Conductivity (lots of noise, weaker)
+- Turbidity (lots of noise, weaker)
 
-# Introducing Lagged Variables
+Focus: **FeCl Dose**. Polymer dose is not changed significantly in plants.
 
-Similar to the Stock dataset we've seen in labs and homeworks, our time series dataset needs lagged variables.   
+# Added Variables
+
+Similar to the stock dataset we've seen in labs and homeworks, our time series dataset needs lagged variables.   
    
 - For each of the main four parameters:
    - Introduce two lagged variables
    - First represents the day before
    - Second represents two days before
+   
+We also introduced a categorical predictor indicating whether the dose increased, decreased, or stayed the same compared to the day before.
+   
+# Summary of Models
+
+**GOAL: Interpretable and Captures Nonlinear Behavior**
+  
+- Training and Testing
+   - Training: 2018-2019
+   - Testing: 2020
+   - Approximately 70/30 split
+- Coagulant Dose Prediction
+   - Linear Regression
+   - Tree-based Models
+   - GAM
+- Coagulant Dose Change Prediction
+   - Multinomial Classification
+   - LDA, QDA
+   - Random Forest
 
 # Coagulant Dose Prediction
 
-**Add slides for various numerical prediction models**
+**GOAL: Predict coagulant doses based on raw water characteristics.**
+
+```{r, fig.width=7, fig.height=3}
+
+df_lag_incdec_long <- df_lag_incdec |>
+  pivot_longer(
+    cols = starts_with("mean_"),
+    names_to = "Characteristics",
+    values_to = "Value"
+  )
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  scale_color_viridis_c(option = "plasma") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "Ferric Chloride (mg/L)",
+    title = "Raw Water Characteristics Over Time Colored by Dosing"
+  )
+
+```
+
+# Coagulant Dose Prediction: Linear Regression
+
+**Ethan: insert table with models attempted**
 
 # Coagulant Dose Prediction: Decision Tree
 
@@ -272,7 +313,7 @@ kable(metrics, booktabs = TRUE, digits = 3) %>%
 
 **Note - make a cleaner table!**
 
-```{r, fig.width=7, fig.height=3.8}
+```{r, fig.width=6.5, fig.height=3.4}
 set.seed(445)
 
 # Random Forest
@@ -333,15 +374,42 @@ vip(fit_rf, bar = TRUE) +
 
 ```
 
-# Coagulant Change Prediction
 
-**Add slides for various classification models**
+# Coagulant Dose Change Prediction
+
+**GOAL: Predict whether coagulant dose increased, decreased, or stayed the same based on raw water characteristics.**
+
+```{r, fig.width=7, fig.height=3}
+
+ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
+  geom_point(size = 0.7) +
+  facet_wrap(~Characteristics, scales = "free_y") +
+  theme_minimal() +
+  labs(
+    x = "Date",
+    y = "Value",
+    color = "FeCl_change",
+    shape = "FeCl_change",
+    title = "Raw Water Characteristics Colored by Dose Change"
+  )
+
+```
+
+
+# Coagulant Dose Change Prediction: Modeling
 
 
 
+# 
 
 
+# Summary of Dose Prediction Models
 
+**Insert bar graph/brief conclusions**
+
+# Summary of Dose Change Prediction Models
+
+**Insert bar graph/brief conclusions**
 
 
 
