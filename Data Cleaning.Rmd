@@ -30,7 +30,8 @@ library(discrim)
 library(nnet)
 library(broom)
 library(dplyr)
-library(kableExtra) 
+library(kableExtra)
+library(tibble)
 
 ```
 
@@ -420,7 +421,7 @@ confusion_matrix <- conf_mat(df_pred_class, truth = FeCl_change, estimate = .pre
 
 # results
 print(accuracy_result)
-print(confusion_matrix)
+print(confusion_matrix) |> kable()
 
 multi_fit |> extract_fit_engine()
 
