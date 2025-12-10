@@ -156,18 +156,18 @@ Focus: **FeCl Dose**. Polymer dose is not changed significantly in plants.
 
 # Added Variables
 
-Similar to the stock dataset we've seen in labs and homeworks, our time series dataset needs lagged variables.   
+Similar to the stock dataset we've seen in labs and homeworks, our time series dataset needs **lagged variables**.   
    
 - For each of the main four parameters:
    - Introduce two lagged variables
    - First represents the day before
    - Second represents two days before
    
-We also introduced a categorical predictor indicating whether the dose increased, decreased, or stayed the same compared to the day before.
+We also introduced a **categorical predictor** indicating whether the dose increased, decreased, or stayed the same compared to the day before.
    
 # Summary of Models
 
-**GOAL: Interpretable and Captures Nonlinear Behavior**
+**Priorities: Interpretability, Capturing of Nonlinear Behavior**
   
 - Training and Testing
    - Training: 2018-2019
@@ -409,22 +409,37 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
 ```
 
 
-# Coagulant Dose Change Prediction: Modeling
+# Coagulant Dose Change Prediction: Multinomial, LDA/QDA
 
 
 
-# 
+# Coagulant Dose Change Prediction: Random Forest
 
 
 # Summary of Dose Prediction Models
+
+__ performed the best out of models tested.
 
 **Insert bar graph/brief conclusions**
 
 # Summary of Dose Change Prediction Models
 
-**Insert bar graph/brief conclusions**
+Overall ineffective, and prone to overfitting (especially random forest).  
+Model predicting no dose change would be more accurate.  
 
+**Insert bar graph**
 
+# Conclusion and Possible Next Steps
+
+- Predicting chemical doses based on these raw water characteristics proved to be ineffective
+- Most likely reasons:
+   - Limited size of dataset
+   - Limited predictor set
+   - Operator-dependent
+   - Complexity of chemical relationships
+   - Other factors (example: reservoir turnover)
+- Operators make decisions based on variety of other factors: chemical waste production, filter performance, lab tests, etc.
+- Incorporate more varieties and time ranges of data in future modeling efforts
 
 
 
