@@ -436,8 +436,9 @@ ggplot(pred_df) +
   
 ```
 ```{r}
-ggplot(df_test) +
-  geom_line(aes(y = FeCl_dose), color = 'orange')
+ggplot(pred_df, aes(x = Timestamp)) +
+  geom_line(aes(y = FeCl_dose), color = 'orange') +
+  geom_line(aes(y = pred), color = 'skyblue')
 
 ```
 
