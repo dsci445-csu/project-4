@@ -298,7 +298,7 @@ df_test  <- df_full |> filter(year(Timestamp) == 2020)
 set.seed(445)
 
 ## RANDOM FOREST
-rf_spec <- rand_forest(mtry = sqrt(.cols())) |>
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees=500, min_n=1) |>
   set_engine("randomForest", importance = TRUE) |>
   set_mode("classification")
 
@@ -330,7 +330,7 @@ rf_fit |>
 
 ## Notes
 # 34% accuracy for all predictors
-# 47% accuracy for just temperature and pH
+# 46.6% accuracy for just temperature and pH
 
 ```
 
