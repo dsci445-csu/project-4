@@ -32,12 +32,20 @@ library(kableExtra)
 library(vip)
 library(png)
 library(grid)
+library(parsnip)
+library(discrim)
 ```
 
+```{r}
+df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |>
+  mutate(Timestamp = ymd(Timestamp))
+df_lag_incdec$FeCl_change <- as.factor(df_lag_incdec$FeCl_change)
+df_lag_incdec$Polymer_change <- as.factor(df_lag_incdec$Polymer_change)
+```
 
 # Background and Motivation
 
-The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards. 
+**The drinking water treatment process takes water from a river, lake, reservoir, or other source, and purifies it to have it reach drinking water standards.** 
 
 ```{r}
 img_array = readPNG("Images/treatmentplot1.png")
@@ -46,9 +54,7 @@ grid.raster(img_array)
 
 # Background and Motivation
 
-**One role of an operator in the water treatment process is to
-look at a wide array of data and make decisions about how to adjust
-chemical doses.**    
+**One role of an operator in the water treatment process is to look at a wide array of data and make decisions about how to adjust chemical doses.**    
 
 ```{r}
 img_array = readPNG("Images/treatmentplot2.png")
@@ -95,8 +101,6 @@ Three years of data from 2018-2020, provided by a Colorado water treatment plant
 # Exploratory Analysis
 
 ```{r, fig.width=7, fig.height=2}
-df_lag_incdec <- read.csv("RWAR_dosing_lag_incdec.csv") |>
-  mutate(Timestamp = ymd(Timestamp))
 
 plot_polymer <- ggplot(df_lag_incdec, aes(x = Timestamp,
                            y = Polymer_dose,
@@ -165,7 +169,7 @@ Similar to the stock dataset we've seen in labs and homeworks, our time series d
    
 We also introduced a **categorical predictor** indicating whether the dose increased, decreased, or stayed the same compared to the day before.
    
-# Summary of Models
+# Summary of Modeling
 
 **Priorities: Interpretability, Capturing of Nonlinear Behavior**
   
@@ -178,9 +182,8 @@ We also introduced a **categorical predictor** indicating whether the dose incre
    - Tree-based Models
    - GAM
 - Coagulant Dose Change Prediction
-   - Multinomial Classification
-   - LDA, QDA
-   - Random Forest
+   - Linear methods: Multinomial, LDA
+   - Nonlinear methods: QDA, Random Forest
 
 # Coagulant Dose Prediction
 
@@ -231,11 +234,11 @@ knitr::include_graphics("Images/linear_model_table.png")
 
 # Performance
 
-- Performed best with multiple interactions between Conductivity, Temp, and pH
+- Performed best with multiple interactions between Conductivity, Temp, and pH.
 
 - Still not great predictions, many are overfit and underfit.
 
-- Linear Structure doesn't capture the relations in our predictors, and incorrect predictions could lead to disastorus results if too much or too little chemical is used.
+- Linear structure doesn't capture the relations in our predictors.
 
 
 # Coagulant Dose Prediction: Decision Tree
@@ -409,11 +412,182 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
 ```
 
 
-# Coagulant Dose Change Prediction: Multinomial, LDA/QDA
+# Coagulant Dose Change Prediction: LDA
 
+```{r}
+set.seed(445)
+
+## TRAIN/TEST DATA (2018-2019 and 2020)
+df_full <- df_lag_incdec |> select(-c(FeCl_dose, Polymer_dose))
+df_train <- df_full |> filter(year(Timestamp) <= 2019)
+df_test  <- df_full |> filter(year(Timestamp) == 2020)
+
+## LDA
+lda_spec <- discrim_linear()
+lda_fit1 <- lda_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+lda_fit2 <- lda_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp + pH_lag1 + pH_lag2 + Temp_lag1 + Temp_lag2, data = df_train)
+
+# select LDA to take metrics of
+lda_fit <- lda_fit2
+
+# performance metrics
+lda_fit_disp <- lda_fit |> extract_fit_engine()
+lda_conf <- lda_fit |> 
+  augment(new_data = df_test) |>
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+lda_acc <- lda_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+
+lda_table <- lda_conf$table |> 
+  as.data.frame() |>
+  rename(Predicted = Prediction, True = Truth, Count = Freq)
+lda_table |>
+  tidyr::pivot_wider(names_from = Predicted, values_from = Count) |>
+  knitr::kable("markdown", caption = "LDA Confusion Matrix")
+
+## Notes
+# 39% test accuracy on all predictors
+# 41% test accuracy on temp and pH
+
+```
+
+
+# Coagulant Dose Change Prediction: QDA
+
+```{r}
+set.seed(445)
+
+## QDA
+qda_spec <- discrim_quad()
+qda_fit1 <- qda_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+qda_fit2 <- qda_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp + pH_lag1 + pH_lag2 + Temp_lag1 + Temp_lag2, data = df_train)
+
+# select LDA to take metrics of
+qda_fit <- qda_fit2
+
+# performance metrics
+qda_fit_disp <- qda_fit |> extract_fit_engine()
+qda_conf <- qda_fit |> 
+  augment(new_data = df_test) |>
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+qda_acc <- qda_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+
+qda_table <- qda_conf$table |> 
+  as.data.frame() |>
+  rename(Predicted = Prediction, True = Truth, Count = Freq)
+qda_table |>
+  tidyr::pivot_wider(names_from = Predicted, values_from = Count) |>
+  knitr::kable("markdown", caption = "QDA Confusion Matrix")
+
+## Notes
+# 39.5% test accuracy on all predictors
+# 43.7% test accuracy on temp and pH
+
+```
+
+
+# Coagulant Dose Change Prediction: Multinomial Classification
+
+```{r}
+## MULTINOMIAL REGRESSION
+multi_model <- multinom_reg() |>
+  set_engine("nnet") |>
+  set_mode("classification")
+
+multi_recipe1 <- recipe(FeCl_change ~ mean_Temp + Temp_lag1 + Temp_lag2 + mean_pH + pH_lag1 + pH_lag2 + mean_Conductivity + Cond_lag1 + Cond_lag2, data = df_train) |>
+  step_normalize(all_numeric_predictors()) |>
+  step_dummy(all_nominal_predictors())
+
+multi_recipe <- multi_recipe1
+
+multi_workflow <- workflow() |>
+  add_recipe(multi_recipe) |>
+  add_model(multi_model)
+
+multi_fit <- fit(multi_workflow, data = df_train)
+
+df_pred_class <- predict(multi_fit, new_data = df_test, type = "class") |>
+  bind_cols(df_test |> select(FeCl_change))
+df_pred_probs <- predict(multi_fit, new_data = df_test, type = "prob") |>
+  bind_cols(df_test |> select(FeCl_change))
+
+# results
+multi_acc <- metrics(df_pred_class, truth = FeCl_change, estimate = .pred_class) |> 
+  filter(.metric == "accuracy")
+multi_conf <- conf_mat(df_pred_class, truth = FeCl_change, estimate = .pred_class)
+multi_fit_disp <- multi_fit |> extract_fit_engine()
+
+multi_table <- multi_conf$table |> 
+  as.data.frame() |>
+  rename(Predicted = Prediction, True = Truth, Count = Freq)
+multi_table |>
+  tidyr::pivot_wider(names_from = Predicted, values_from = Count) |>
+  knitr::kable("markdown", caption = "Multinomial Regression Confusion Matrix")
+
+## NOTES
+# turbidity is highly variable and does not help
+
+```
 
 
 # Coagulant Dose Change Prediction: Random Forest
+
+```{r}
+
+set.seed(445)
+
+## RANDOM FOREST
+rf_spec <- rand_forest(mtry = sqrt(.cols()), trees=500, min_n=1) |>
+  set_engine("randomForest", importance = TRUE) |>
+  set_mode("classification")
+
+# Different model fits
+rf_fit1 <- rf_spec |>
+  fit(FeCl_change ~ ., data = df_train |> 
+        select(-c(Polymer_change, Timestamp)))
+rf_fit2 <- rf_spec |>
+  fit(FeCl_change ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2, 
+      data = df_train)
+rf_fit3 <- rf_spec |>
+  fit(FeCl_change ~ mean_pH + mean_Temp, 
+      data = df_train)
+
+# Model fit to take performance metrics of:
+rf_fit <- rf_fit2
+
+# Most important predictors
+#vip(rf_fit)
+
+## results
+rf_acc <- rf_fit |>
+  augment(new_data = df_test) |>
+  accuracy(truth = FeCl_change, estimate = .pred_class)
+rf_conf <- rf_fit |>
+  augment(new_data = df_test) |>
+  conf_mat(truth = FeCl_change, estimate = .pred_class)
+
+rf_table <- rf_conf$table |> 
+  as.data.frame() |>
+  rename(Predicted = Prediction, True = Truth, Count = Freq)
+rf_table |>
+  tidyr::pivot_wider(names_from = Predicted, values_from = Count) |>
+  knitr::kable("markdown", caption = "Random Forest Confusion Matrix")
+
+## Notes
+# 34% accuracy for all predictors
+# 39% accuracy for temp + pH + temp/pH lags
+# 46.6% accuracy for just temperature and pH
+
+```
 
 
 # Summary of Dose Prediction Models

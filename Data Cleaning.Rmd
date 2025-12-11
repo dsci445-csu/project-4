@@ -314,22 +314,26 @@ rf_fit3 <- rf_spec |>
       data = df_train)
 
 # Model fit to take performance metrics of:
-rf_fit <- rf_fit3
+rf_fit <- rf_fit2
 
 # Most important predictors
 vip(rf_fit)
 
 ## Accuracy
-rf_fit |>
+rf_acc <- rf_fit |>
   augment(new_data = df_test) |>
   accuracy(truth = FeCl_change, estimate = .pred_class)
 ## Test confusion matrix
-rf_fit |>
+rf_conf <- rf_fit |>
   augment(new_data = df_test) |>
   conf_mat(truth = FeCl_change, estimate = .pred_class)
 
+rf_acc
+rf_conf
+
 ## Notes
 # 34% accuracy for all predictors
+# 39% accuracy for temp + pH + temp/pH lags
 # 46.6% accuracy for just temperature and pH
 
 ```
