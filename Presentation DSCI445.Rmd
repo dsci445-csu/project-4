@@ -174,15 +174,15 @@ We also introduced a **categorical predictor** indicating whether the dose incre
 **Priorities: Interpretability, Capturing of Nonlinear Behavior**
   
 - Training and Testing
-   - Training: 2018-2019
-   - Testing: 2020
+   - Training 2018-2019, Testing 2020
    - Approximately 70/30 split
 - Coagulant Dose Prediction
    - Linear Regression Models
-   - Tree-based Models
+   - Tree-Based Models
 - Coagulant Dose Change Prediction
-   - Linear methods: Multinomial, LDA
-   - Nonlinear methods: QDA, Random Forest
+   - LDA, QDA
+   - Multinomial
+   - Random Forest
 
 # Coagulant Dose Prediction
 
@@ -223,7 +223,7 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
 
 - RMSE and MAE vary widely depending which predictors are selected and the interactions
 
-# RMSE & MAE Table
+# Coagulant Dose Prediction: Linear Regression
 
 ```{r, out.width="80%", out.height="88%"}
 knitr::include_graphics("Images/linear_model_table.png")
