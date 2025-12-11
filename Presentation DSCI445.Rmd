@@ -214,16 +214,15 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
 
 # Coagulant Dose Prediction: Linear Regression
 
-- Created 6 models with different predictors and combinations of interaction terms. 
+- Created 6 models with different predictors and combinations of interaction terms
 
-- Used lag variables for temp, ph, conductivity, turbidity
+- Used lag variables for temp, pH, conductivity, turbidity
 
-- Dropped Turbidity as it was not a good predictor for FeCL dosing.
-  - Conductivity was also dropped eventually due to being similar to Turbidity
+- Dropped Turbidity as it was not a good predictor for FeCL dosing
 
-- Difficult to determine what factors of the dataset are driving the predictions.
+- Difficult to determine what factors of the dataset are driving the predictions
 
-- RMSE and MAE seem to be all over the place dependent on which predictors are selected and the interactions.
+- RMSE and MAE vary widely depending which predictors are selected and the interactions
 
 # RMSE & MAE Table
 
@@ -351,8 +350,6 @@ predictions = fit_rf %>%
 
 actual = predictions$`FeCl_dose` # Change target variable here
 predicted = predictions$.pred
-
-# Metrics and plots
 
 # Metrics and plots
 
@@ -607,18 +604,72 @@ rf_table |>
 
 # Summary of Dose Prediction Models
 
-__ performed the best out of models tested.
 
-**Insert bar graph/brief conclusions**
+```{r, fig.height=3.8, fig.width=7}
+
+# - The model with pH & temperature interactions with conductivity performed the best out of models tested.
+# - Tree-based models performed the worst, likely due to overfitting.
+# - All models diverged from the actual dose by an average of at least 1.4 mg/L.
+
+dosepred_df <- data.frame(Model = c("Random Forest", "Decision Tree", "Cond-pH + Cond-Temp", "Conductivity-Temp", "Temp and pH"),
+                          RMSE = c(2.811, 2.756, 1.672, 1.891, 2.350),
+                          MAE = c(2.283, 2.484, 1.421, 1.516, 1.941))
+
+# convert to long format
+dosepred_long <- dosepred_df |>
+  arrange(RMSE) |>
+  mutate(Model = factor(Model, levels = unique(Model))) |>
+  pivot_longer(
+    cols = c(RMSE, MAE),
+    names_to = "Metric",
+    values_to = "Value"
+  )
+
+# Plot generation
+ggplot(dosepred_long, aes(x = Model, y = Value, fill = Metric)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(
+    aes(label = sprintf("%.3f", Value)), 
+    position = position_dodge(width = 0.8),
+    vjust = -0.5, 
+    size = 2
+  ) +
+  labs(
+    title = "Dose Prediction Model Comparison (RMSE and MAE)",
+    x = "Model",
+    y = "Error Value"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
 
 # Summary of Dose Change Prediction Models
 
 Overall ineffective, and prone to overfitting (especially random forest).  
 Model predicting no dose change would be more accurate.  
 
-**Insert bar graph**
+```{r, fig.width=7, fig.height=3}
 
-# Conclusion and Possible Next Steps
+dosechangepred_df <- data.frame(
+  Model = c("LDA", "QDA", "Multinomial", "Random Forest"),
+  Accuracy = c(lda_acc$.estimate, qda_acc$.estimate, 
+               multi_acc$.estimate, rf_acc$.estimate)
+) |> arrange(Accuracy)
+
+ggplot(dosechangepred_df, aes(x = reorder(Model,-Accuracy), y = Accuracy)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = scales::percent(Accuracy, accuracy = 0.1)),
+            vjust = -0.3, size = 4) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
+                     limits = c(0, max(dosechangepred_df$Accuracy) * 1.1)) +
+  labs(x = "Model", y = "Accuracy") +
+  theme_minimal()
+
+```
+
+
+# Conclusion and Next Steps
 
 - Predicting chemical doses based on these raw water characteristics proved to be ineffective
 - Most likely reasons:
@@ -629,28 +680,4 @@ Model predicting no dose change would be more accurate.
    - Other factors (example: reservoir turnover)
 - Operators make decisions based on variety of other factors: chemical waste production, filter performance, lab tests, etc.
 - Incorporate more varieties and time ranges of data in future modeling efforts
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
