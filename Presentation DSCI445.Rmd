@@ -178,9 +178,8 @@ We also introduced a **categorical predictor** indicating whether the dose incre
    - Testing: 2020
    - Approximately 70/30 split
 - Coagulant Dose Prediction
-   - Linear Regression
+   - Linear Regression Models
    - Tree-based Models
-   - GAM
 - Coagulant Dose Change Prediction
    - Linear methods: Multinomial, LDA
    - Nonlinear methods: QDA, Random Forest
