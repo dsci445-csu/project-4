@@ -232,15 +232,6 @@ knitr::include_graphics("Images/linear_model_table.png")
 ```
 
 
-# Performance
-
-- Performed best with multiple interactions between Conductivity, Temp, and pH.
-
-- Still not great predictions, many are overfit and underfit.
-
-- Linear structure doesn't capture the relations in our predictors.
-
-
 # Coagulant Dose Prediction: Decision Tree
 
 ```{r, fig.width=5, fig.height=2.5}
@@ -414,6 +405,12 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_change)) +
 
 # Coagulant Dose Change Prediction: LDA
 
+- Experimented with predictor sets and found that pH and temperature (plus the associated lagged variables) were the main effective predictors.
+- Turbidity and conductivity did not improve prediction.  
+  
+LDA ACCURACY: 43.7%
+  
+  
 ```{r}
 set.seed(445)
 
@@ -458,6 +455,12 @@ lda_table |>
 
 # Coagulant Dose Change Prediction: QDA
 
+- Experimented with predictor sets and found that pH and temperature (plus the associated lagged variables) were the main effective predictors.
+- Turbidity and conductivity did not improve prediction.  
+  
+QDA ACCURACY: 35.7%
+
+
 ```{r}
 set.seed(445)
 
@@ -469,7 +472,7 @@ qda_fit1 <- qda_spec |>
 qda_fit2 <- qda_spec |>
   fit(FeCl_change ~ mean_pH + mean_Temp + pH_lag1 + pH_lag2 + Temp_lag1 + Temp_lag2, data = df_train)
 
-# select LDA to take metrics of
+# select QDA to take metrics of
 qda_fit <- qda_fit2
 
 # performance metrics
@@ -496,6 +499,12 @@ qda_table |>
 
 
 # Coagulant Dose Change Prediction: Multinomial Classification
+
+- Experimented with predictor sets and found that pH and temperature (plus the associated lagged variables) were the main effective predictors.
+- Turbidity and conductivity did not improve prediction.  
+  
+MULTINOMIAL ACCURACY: 46.3%
+
 
 ```{r}
 ## MULTINOMIAL REGRESSION
@@ -540,6 +549,12 @@ multi_table |>
 
 
 # Coagulant Dose Change Prediction: Random Forest
+
+- Experimented with predictor sets and found that pH and temperature (plus the associated lagged variables) were the main effective predictors.
+- Turbidity and conductivity did not improve prediction.  
+  
+RANDOM FOREST ACCURACY: 39.2%
+
 
 ```{r}
 
