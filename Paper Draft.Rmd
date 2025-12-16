@@ -30,6 +30,8 @@ library(png)
 library(grid)
 library(parsnip)
 library(discrim)
+library(gt)
+library(Metrics)
 ```
 
 ```{r}
@@ -315,23 +317,153 @@ ggplot(df_lag_incdec_long, aes(x = Timestamp, y = Value, color = FeCl_dose)) +
 
 ### Linear Regression
 
-**Ethan's section to fill in**
+To model FeCl dosing using linear regression, we fit six different linear regression models that varied in their choice of predictors and inclusion of differing interaction terms. The models incorporated current and lagged values of temperature, pH, conductivity, and turbidity, allowing us to account for delayed effects in the system from previous days. Several interactions were tested, including temperature-pH and temperature-conductivity, to capture potential nonlinear relationships between water quality variables. Turbidity was ultimately dropped from the final models, as it consistently preformed poorly as a predictor for FeCl dosing.
+```{r}
 
-**from presentation:**
+RWAR_dosing <- df_lag_incdec %>% 
+  mutate(Timestamp = ymd(Timestamp),
+         Year = year(Timestamp))
 
-- Created 6 models with different predictors and combinations of interaction terms
+train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
+test  <- RWAR_dosing %>% filter(Year == 2020)
 
-- Used lag variables for temp, pH, conductivity, turbidity
+# All predictors
 
-- Dropped Turbidity as it was not a good predictor for FeCL dosing
+model0 <- lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 + Turb_lag1 + Turb_lag2, data = train)
 
-- Difficult to determine what factors of the dataset are driving the predictions
+test$pred_model0 <- predict(model0, newdata = test)
 
-- RMSE and MAE vary widely depending which predictors are selected and the interactions
+# 1 Interaction Term
+
+model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +     Turb_lag2,data = train)
+
+
+test$pred_model1 <- predict(model1, newdata = test)
+
+# 2 Interaction Terms
+
+model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train)
+
+test$pred_model2 <- predict(model2, newdata = test)
+
+
+model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train)
+
+test$pred_model3 <- predict(model3, newdata = test)
+
+
+# 2 Interactions: Cond and PH and Temp and Cond
+
+model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train)
+
+test$pred_model4 <- predict(model4, newdata = test)
+
+
+
+model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+
+test$pred_model5 <- predict(model5, newdata = test)
+
+```
+
+
 
 ```{r, out.width="80%", out.height="88%"}
-knitr::include_graphics("Images/linear_model_table.png")
+# Creating Table and Top Model Graphs
+
+models <- list(
+  
+  model0 = lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 +
+                Turb_lag1 + Turb_lag2, data = train),
+  
+  model1 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Turbidity + Temp_lag1  + Temp_lag2 + Turb_lag1 +
+                Turb_lag2,data = train),
+  
+  model2 = lm(FeCl_dose ~ mean_Temp * mean_pH + mean_Conductivity * mean_Turbidity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2, data = train),
+  
+  model3 = lm(FeCl_dose ~ mean_Temp * mean_Conductivity + Temp_lag1 + Temp_lag2 + Cond_lag1 + Cond_lag2,                 data = train),
+  
+  model4 = lm(FeCl_dose ~ mean_Conductivity * mean_pH + mean_Temp * mean_Conductivity +
+                Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2,
+              data = train),
+  
+  model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2,
+              data = train)
+)
+
+descriptions <- c(
+  "Main effects only",
+  "Temp × pH interaction",
+  "Temp × pH + Cond × Turb interactions",
+  "Temp × Cond interaction",
+  "Cond × pH + Temp × Cond interactions",
+  "Only Temp and pH"
+)
+
+
+
+
+performance <- data.frame(Model = character(),
+                          RMSE = numeric(),
+                          MAE = numeric(),
+                          Description = character(),
+                          stringsAsFactors = FALSE)
+
+for(i in 1:length(models)) {
+  pred <- predict(models[[i]], newdata = test)
+  performance <- rbind(performance,
+                       data.frame(Model = paste0("Model ", i-1),
+                                  RMSE = round(Metrics::rmse(test$FeCl_dose, pred), 3),
+                                  MAE  = round(Metrics::mae(test$FeCl_dose, pred), 3),
+                                  Description = descriptions[i],
+                                  stringsAsFactors = FALSE))
+
+}
+  performance <- performance %>% arrange(RMSE)
+
+
+best_rmse <- min(performance$RMSE)
+
+
+
+kable_table <- performance %>%
+  kable("html", caption = "Model Performance Summary") %>%
+  kable_styling(full_width = F, position = "center") %>%
+  row_spec(which(performance$RMSE == best_rmse), background = "#cfe2f3")  
+
+
+kable_table
+
+p3 <- ggplot(test, aes(x = FeCl_dose, y = pred_model3)) +
+  geom_point(color = "blue") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 3: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p4 <- ggplot(test, aes(x = FeCl_dose, y = pred_model4)) +
+  geom_point(color = "green") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Model 4: Predicted vs Actual FeCl_dose",
+       x = "Actual FeCl_dose",
+       y = "Predicted FeCl_dose") +
+  theme_minimal()
+
+
+p3
+p4
 ```
+
+ Model performance was evaluated using RMSE and MAE on a 2020 test set, and varied substantially depending on the selected predictors and interactions. There is evidence of other factors influencing the dosing as many of the predictors in our data set proved to be not be as influential as we originally had suspected. This is reflected through the model performance in which the model with temperature-pH and temperature-conductivity being the best, but its predictions still deviated considerably from the actual FeCl dosing values. As seen in the plots and table above, none of the models performed particularly well, and there was a ton of variance within each model and how well it predicted.
+
 
 ### Decision Tree
 The benefit of a tree-based model in this application is that it is easily interpretable.
