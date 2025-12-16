@@ -413,7 +413,7 @@ kable(metrics, booktabs = TRUE, digits = 3) %>%
 
 ### Random Forest
 
-(talk about why random forest was used, parameters and predictors used, process of building, etc.)
+Random forest was used was the logical next step to try to better capture the nonlinear patterns in our data. Multiple different tree amounts were attempted, but ultimately they all performed similarly. Although the random forest was unable to model the data, we were able to determine which features had the most importance. A graph was created to visualize the feature importance for this dataset. Notably, pH and the pH lag variables were the most important. Temperature and the temperature lag variables followed, which is similar to what we concluded from other models and our exploratory analysis.
 
 ```{r, fig.width=5, fig.height=2.1}
 set.seed(445)
