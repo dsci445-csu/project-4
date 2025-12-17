@@ -5,9 +5,21 @@ date: "17 December 2025"
 output: pdf_document
 toc: TRUE
 ---
-
+CAUTION: Please uncomment any of the install.packages that aren't already installed.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
+#install.packages("zoo")
+#install.packages("purrr")
+#install.packages("kableExtra")
+#install.packages("vip")
+#install.packages("png")
+#install.packages("grid")
+#install.packages("discrim")
+#install.packages("gt")
+#install.packages("Metrics")
+#install.packages("ranger")
+#install.packages("randomForest")
+
 ```
 
 ```{r, include=F}
@@ -33,6 +45,8 @@ library(discrim)
 library(gt)
 library(Metrics)
 library(mgcv)
+library(ranger)
+library(randomForest)
 ```
 
 ```{r}
@@ -333,9 +347,9 @@ RWAR_dosing <- df_lag_incdec %>%
 
 train <- RWAR_dosing %>% filter(Year %in% c(2018, 2019))
 test  <- RWAR_dosing %>% filter(Year == 2020)
-
-# All predictors
-
+```
+All predictors:
+```{r}
 model0 <- lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity + Temp_lag1 + Temp_lag2 + pH_lag1 + pH_lag2 + Cond_lag1 + Cond_lag2 + Turb_lag1 + Turb_lag2, data = train)
 
 test$pred_model0 <- predict(model0, newdata = test)
@@ -374,10 +388,10 @@ model5 = lm(FeCl_dose ~ mean_Temp + mean_pH + Temp_lag1 + Temp_lag2 + pH_lag1 + 
               data = train)
 
 test$pred_model5 <- predict(model5, newdata = test)
+```
 
-
-## Create graphs and get model results
-
+Generate model results
+```{r}
 models <- list(
   
   model0 = lm(FeCl_dose ~ mean_Temp + mean_pH + mean_Conductivity + mean_Turbidity +
@@ -426,10 +440,15 @@ for(i in 1:length(models)) {
 
 }
   performance <- performance %>% arrange(RMSE)
-
-
+performance
+```
+Selecting the best RMSE:
+```{r}
 best_rmse <- min(performance$RMSE)
-
+best_rmse
+```
+Display Plots of models' performance on test data:
+```{r}
 kable_table_pdf <- performance %>%
   # Use format = "latex" for PDF output
   kable("latex",
@@ -442,8 +461,9 @@ p3 <- ggplot(test, aes(x = FeCl_dose, y = pred_model3)) +
        x = "Actual FeCl_dose",
        y = "Predicted FeCl_dose") +
   theme_minimal()
-
-
+p3
+```
+```{r}
 p4 <- ggplot(test, aes(x = FeCl_dose, y = pred_model4)) +
   geom_point(color = "green") +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
@@ -454,7 +474,7 @@ p4 <- ggplot(test, aes(x = FeCl_dose, y = pred_model4)) +
 
 kable_table_pdf
 
-p3
+p4
 
 ```
 
@@ -545,7 +565,7 @@ kable(metrics, booktabs = TRUE, digits = 3) %>%
 
 ### Random Forest
 
-Random forest was used was the logical next step to try to better capture the nonlinear patterns in our data. Multiple different tree amounts were attempted, but ultimately they all performed similarly, and worse than the linear models. Although the random forest was unable to model the data, we were able to determine which features had the most importance. A graph was created to visualize the feature importance for this dataset. Notably, pH and the pH lag variables were the most important. Temperature and the temperature lag variables followed, which is similar to what we concluded from other models and our exploratory analysis.  
+Random forest was used and was the next logical step to try to better capture any nonlinear patterns in our data. Multiple different tree amounts were attempted, but ultimately they all performed similarly, and worse than the linear models. Although the random forest was unable to model the data, we were able to determine which features had the most importance. A graph was created to visualize the feature importance for this dataset. Notably, pH and the pH lag variables were the most important. Temperature and the temperature lag variables followed, which is similar to what we concluded from other models and our exploratory analysis.  
 
 ```{r, fig.width=5, fig.height=2.1}
 set.seed(445)
@@ -652,9 +672,10 @@ gam_fit <- gam(
   data = train
 )
 
-# gam_fit |> tidy()
-# gam_fit |> glance()
-
+gam_fit |> tidy()
+gam_fit |> glance()
+```
+```{r}
 pred_df <- test %>% 
   mutate(pred = predict(gam_fit, newdata = test))
 
@@ -675,7 +696,9 @@ ggplot(pred_df, aes(x = Timestamp)) +
 
 ```
 
-Overall, the GAM was able to vaguely follow trends in dosing for the testing dataset, but did not perform overly well, with MAE and RMSE of 1.8 mg/L and 2.3 mg/L, respectively. The model flexibility did not turn out to yield the hoped-for results, though it performed similarly to the standard linear models. It did out-perform both of the tree-based models.     
+Overall, the GAM was able to vaguely follow trends in dosing for the testing dataset, but did not perform overly well, with MAE and RMSE of 1.8 mg/L and 2.3 mg/L, respectively. The model flexibility did not turn out to yield the hoped-for results, though it performed similarly to the standard linear models. It did out-perform both of the tree-based models.  
+
+There does seem to be a faint trend between the model performance and the observations in a postive slope direction.  This model may perform better if we had more years at our disposal to train the GAM on, but how much better is highly speculative because of the variation of predictions from the model in contrast to the observations.  More data could be what this model needs.
 
 ### Summary of Dose Prediction Models
 
