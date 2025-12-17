@@ -5,20 +5,8 @@ date: "17 December 2025"
 output: pdf_document
 toc: TRUE
 ---
-CAUTION: Please uncomment any of the install.packages that aren't already installed.
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
-#install.packages("zoo")
-#install.packages("purrr")
-#install.packages("kableExtra")
-#install.packages("vip")
-#install.packages("png")
-#install.packages("grid")
-#install.packages("discrim")
-#install.packages("gt")
-#install.packages("Metrics")
-#install.packages("ranger")
-#install.packages("randomForest")
 
 ```
 
@@ -440,7 +428,6 @@ for(i in 1:length(models)) {
 
 }
   performance <- performance %>% arrange(RMSE)
-performance
 ```
 Selecting the best RMSE:
 ```{r}
@@ -671,9 +658,6 @@ gam_fit <- gam(
                s(Turb_lag1) + s(Turb_lag2),
   data = train
 )
-
-gam_fit |> tidy()
-gam_fit |> glance()
 ```
 ```{r}
 pred_df <- test %>% 
